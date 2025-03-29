@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { RxHamburgerMenu } from "react-icons/rx";
 import { GoSearch } from "react-icons/go";
 import { CiCircleQuestion } from "react-icons/ci";
 import { IoSettingsOutline } from "react-icons/io5";
 import { PiDotsNineBold } from "react-icons/pi";
+import { IoLogOutOutline } from "react-icons/io5";
 import Avatar from 'react-avatar';
 import { useDispatch, useSelector } from 'react-redux'
 import { setAuthUser, setSearchText } from '../redux/appSlice'
@@ -11,13 +12,32 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom';
 
-
 const Navbar = () => {
-
     const { user } = useSelector(store => store.app)
     const [text, setText] = useState('')
+    const [showProfileMenu, setShowProfileMenu] = useState(false)
+    const profileMenuRef = useRef(null)
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const handleClickOutside = useCallback((event) => {
+        if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+            setShowProfileMenu(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (showProfileMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showProfileMenu, handleClickOutside]);
+
+    const handleShowProfileMenu = () => {
+        setShowProfileMenu(prev => !prev);
+    }
 
     const logoutHandler = async () => {
         try {
@@ -30,15 +50,12 @@ const Navbar = () => {
         }
     }
 
-
-
-    //need suggestion on every key press for search mail..so useEffect
     useEffect(() => {
         dispatch(setSearchText(text));
     }, [text]);
 
     return (
-        <div className='flex items-center justify-between mx-3 h-16'>
+        <div className='flex items-center justify-between mx-3 h-20'>
             <div className='flex items-center gap-10'>
                 <div className='flex item-center gap-2'>
                     <div className='p-3 hover:bg-gray-200 rounded-full'>
@@ -59,7 +76,7 @@ const Navbar = () => {
                 user &&
                 <>
                     <div className='w-[50%] mr-60'>
-                        <div className='flex items-center bg-[#EAF1FB] px-2 py-3 rounded-full'>
+                        <div className='flex items-center bg-[#EAF1FB] px-2 py-3.5 rounded-full'>
                             <GoSearch size={'20px'} className='text-gray-700' />
 
                             <input onChange={(e) => setText(e.target.value)} value={text} type='text' placeholder='search mail'
@@ -67,17 +84,45 @@ const Navbar = () => {
                         </div>
                     </div>
                     <div className='flex items-center gap-2'>
-                        <div className=' p-2 rounded-full hover:bg-gray-200 cursor-pointer'>
+                        <div className='p-2.5 rounded-full hover:bg-gray-200 cursor-pointer'>
                             <CiCircleQuestion size={'24px'} />
                         </div>
-                        <div className='p-2 rounded-full hover:bg-gray-200 cursor-pointer'>
+                        <div className='p-2.5 rounded-full hover:bg-gray-200 cursor-pointer'>
                             <IoSettingsOutline size={'24px'} />
                         </div>
-                        <div className='p-2 rounded-full hover:bg-gray-200 cursor-pointer'>
+                        <div className='p-2.5 rounded-full hover:bg-gray-200 cursor-pointer'>
                             <PiDotsNineBold size={'24px'} />
                         </div>
-                        <span onClick={logoutHandler} className='underline cursor-pointer'>Logout</span>
-                        <Avatar src={user.profilePhoto} size="40" round={true} />
+                        <div className="relative" ref={profileMenuRef}>
+                            <Avatar
+                                src={user.profilePhoto}
+                                size="40"
+                                round={true}
+                                className="cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={handleShowProfileMenu}
+                            />
+
+                            {showProfileMenu && (
+                                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                    <div className="px-4 py-3 border-b border-gray-200">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar src={user.profilePhoto} size="40" round={true} />
+                                            <div>
+                                                <p className="font-medium text-gray-900">{user.fullname}</p>
+                                                <p className="text-sm text-gray-500">{user.email}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={logoutHandler}
+                                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                    >
+                                        <IoLogOutOutline size={20} />
+                                        <span>Logout</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </>
             }
