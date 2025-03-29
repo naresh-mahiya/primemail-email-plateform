@@ -1,0 +1,28 @@
+import { useEffect } from 'react'
+import axios from 'axios'
+import { useDispatch, useSelector } from 'react-redux'
+import { setInboxEmails } from '../redux/appSlice'
+
+const useGetInboxEmails = () => {
+
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        const fetchEmails = async () => {
+            try {
+                const res = await axios.get('http://localhost:8080/api/v1/email/getinbox', {
+                    withCredentials: true
+                });
+
+                dispatch(setInboxEmails(res.data.emails))
+
+            } catch (error) {
+                console.log(error)
+            }
+        }
+        fetchEmails();
+    }, []);
+}
+
+
+export default useGetInboxEmails
