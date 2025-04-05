@@ -198,7 +198,11 @@ export const getEmailThread = async (req, res) => {
         const thread = await Email.find({ threadId })
             .sort({ createdAt: 1 }) // Sort by creation time
             .populate('senderId', 'fullname email')
-            .populate('receiverIds', 'fullname email')
+            .populate({
+                path: 'receiverIds',
+                select: 'fullname email',
+                model: 'User'
+            })
             .populate({
                 path: 'parentEmailId',
                 populate: [
@@ -206,8 +210,19 @@ export const getEmailThread = async (req, res) => {
                     { path: 'receiverIds', select: 'fullname email' }
                 ]
             });
-            
-        return res.status(200).json({ thread });
+
+        if (!thread || thread.length === 0) {
+            return res.status(404).json({ message: 'Thread not found' });
+        }
+
+        // Validate and clean up the thread data
+        const cleanedThread = thread.map(email => ({
+            ...email.toObject(),
+            receiverIds: Array.isArray(email.receiverIds) ? email.receiverIds : [],
+            senderId: email.senderId || { fullname: 'Unknown Sender', email: 'unknown' }
+        }));
+
+        return res.status(200).json({ thread: cleanedThread });
     } catch (error) {
         console.error('Error in getEmailThread:', error);
         return res.status(500).json({ message: 'Internal server error' });
@@ -288,3 +303,103 @@ export const forwardEmail = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 }
+
+// Star an email
+export const starEmail = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.id;
+
+        // Find the email and check if user has access to it
+        const email = await Email.findOne({
+            _id: id,
+            $or: [
+                { senderId: userId },
+                { receiverIds: userId }
+            ]
+        });
+
+        if (!email) {
+            return res.status(404).json({ message: 'Email not found' });
+        }
+
+        // Add email to user's starred list
+        await User.findByIdAndUpdate(userId, { $addToSet: { starred: id } });
+
+        res.status(200).json({ message: 'Email starred successfully' });
+    } catch (error) {
+        console.log("error from starEmail=>", error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Unstar an email
+export const unstarEmail = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.id;
+
+        // Find the email and check if user has access to it
+        const email = await Email.findOne({
+            _id: id,
+            $or: [
+                { senderId: userId },
+                { receiverIds: userId }
+            ]
+        });
+
+        if (!email) {
+            return res.status(404).json({ message: 'Email not found' });
+        }
+
+        // Remove email from user's starred list
+        await User.findByIdAndUpdate(userId, { $pull: { starred: id } });
+
+        res.status(200).json({ message: 'Email unstarred successfully' });
+    } catch (error) {
+        console.log("error from unstarEmail=>", error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Get starred emails
+export const getStarredEmails = async (req, res) => {
+    try {
+        const userId = req.id;
+
+        // Get user with populated starred emails
+        const user = await User.findById(userId)
+            .populate({
+                path: 'starred',
+                populate: [
+                    { path: 'senderId', select: 'fullname email' },
+                    { path: 'receiverIds', select: 'fullname email' }
+                ],
+                options: { sort: { createdAt: -1 } }
+            });
+
+        res.status(200).json({ emails: user.starred });
+    } catch (error) {
+        console.log("error from getStarredEmails=>", error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Add new endpoint to get single email by ID
+export const getEmailById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const email = await Email.findById(id)
+            .populate('senderId', 'fullname email')
+            .populate('receiverIds', 'fullname email');
+
+        if (!email) {
+            return res.status(404).json({ message: 'Email not found' });
+        }
+
+        return res.status(200).json({ email });
+    } catch (error) {
+        console.error('Error in getEmailById:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};

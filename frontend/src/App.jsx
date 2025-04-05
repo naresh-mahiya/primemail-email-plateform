@@ -11,6 +11,7 @@ import {Toaster} from 'react-hot-toast'
 import SentBox from './components/SentBox'
 import InboxMail from './components/inboxMail'
 import SentMail from './components/sentMail'
+import StarredMail from './components/StarredMail'
 
 
 
@@ -35,7 +36,14 @@ const appRouter = createBrowserRouter([
         path: 'sent/mail/:id',
         element: <SentMail />
       },
-
+      {
+        path: 'starred',
+        element: <StarredMail />
+      },
+      {
+        path: 'starred/mail/:id',
+        element: <StarredMail />
+      }
     ]
 
   },

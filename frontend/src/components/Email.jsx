@@ -1,16 +1,50 @@
-import React from 'react'
-import { MdScheduleSend, MdDone, MdDoneAll, MdCropSquare, MdOutlineStarBorder, MdOutlineStar } from 'react-icons/md'
+import React, { useState, useEffect } from 'react'
+import { MdScheduleSend, MdDone, MdDoneAll, MdCropSquare, MdOutlineStarBorder, MdStar } from 'react-icons/md'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { setSelectedEmail } from '../redux/appSlice'
+import axios from 'axios'
+import { toast } from 'react-hot-toast'
 
-const Email = ({ email }) => {
+const Email = ({ email, onDelete }) => {
   const location = useLocation();
   const isInbox = location.pathname === '/'
   const isSent = location.pathname === '/sent'
+  const isStarred = location.pathname === '/starred'
+  const [isStarredStatus, setIsStarredStatus] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if email is starred
+    const checkStarred = async () => {
+      try {
+        const res = await axios.get('http://localhost:8080/api/v1/email/starred', { withCredentials: true });
+        setIsStarredStatus(res.data.emails.some(e => e._id === email._id));
+      } catch (error) {
+        console.log("error from checkStarred=>", error);
+      }
+    };
+    checkStarred();
+  }, [email._id]);
+
+  const handleStar = async (e) => {
+    e.stopPropagation();
+    try {
+      if (isStarredStatus) {
+        await axios.post(`http://localhost:8080/api/v1/email/unstar/${email._id}`, {}, { withCredentials: true });
+        toast.success('Email unstarred');
+      } else {
+        await axios.post(`http://localhost:8080/api/v1/email/star/${email._id}`, {}, { withCredentials: true });
+        toast.success('Email starred');
+      }
+      setIsStarredStatus(!isStarredStatus);
+    } catch (error) {
+      console.log("error from handleStar=>", error);
+      toast.error('Failed to update star status');
+    }
+  };
 
   const truncateMessage = (message, maxLength = 100) => {
     if (!message) return '';
@@ -20,10 +54,13 @@ const Email = ({ email }) => {
 
   const openMail = () => {
     dispatch(setSelectedEmail(email))
-    if (isInbox)
+    if (isStarred) {
+      navigate(`/starred/mail/${email._id}`);
+    } else if (isInbox) {
       navigate(`/inbox/mail/${email._id}`);
-    else
-      navigate(`/sent/mail/${email._id}`)
+    } else {
+      navigate(`/sent/mail/${email._id}`);
+    }
   }
 
   // Helper function to get recipient names
@@ -41,7 +78,19 @@ const Email = ({ email }) => {
     >
       <div className='flex items-center gap-2 w-1/4'>
         <MdCropSquare size={18} />
-        <MdOutlineStarBorder size={18} />
+        {isStarredStatus ? (
+          <MdStar 
+            size={18} 
+            className="text-yellow-400 cursor-pointer" 
+            onClick={handleStar}
+          />
+        ) : (
+          <MdOutlineStarBorder 
+            size={18} 
+            className="cursor-pointer" 
+            onClick={handleStar}
+          />
+        )}
         {isInbox ? (
           <span className='font-medium'>{email?.senderId?.fullname || 'Unknown'}</span>
         ) : (

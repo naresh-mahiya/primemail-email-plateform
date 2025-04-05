@@ -17,7 +17,7 @@ const sidebarItems = [
     {
         icon: <IoMdStarOutline size={'22px'} />,
         text: 'Starred',
-        to:'#'
+        to:'/starred'
     },
     {
         icon: <MdOutlineWatchLater size={'22px'} />,

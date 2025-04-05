@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     password: {
         type: String,
@@ -19,9 +20,7 @@ const userSchema = new mongoose.Schema({
     },
     inbox: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Email' }],
     sent: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Email' }],
-    
-   
-
+    starred: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Email' }]
 }, { timestamps: true });
 
 

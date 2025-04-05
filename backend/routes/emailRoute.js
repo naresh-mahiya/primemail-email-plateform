@@ -1,17 +1,23 @@
 import express from 'express'
-import { trackEmailRead,createEmail,replyToEmail ,deleteEmail, getAllEmailsInbox,getAllEmailsSent, getEmailThread, forwardEmail } from '../controllers/emailCtrl.js';
+import { trackEmailRead, createEmail, replyToEmail, deleteEmail, getAllEmailsInbox, getAllEmailsSent, getEmailThread, forwardEmail, starEmail, unstarEmail, getStarredEmails, getEmailById } from '../controllers/emailCtrl.js';
 import isAuthenticated from '../middleware/isAuthenticated.js'
 
 const router = express.Router();
 
+// Specific routes first
+router.route('/create').post(isAuthenticated, createEmail);
+router.route('/delete/:id').delete(isAuthenticated, deleteEmail);
+router.route('/getinbox').get(isAuthenticated, getAllEmailsInbox);
+router.route('/getsent').get(isAuthenticated, getAllEmailsSent);
+router.route('/thread/:threadId').get(isAuthenticated, getEmailThread);
+router.route('/star/:id').post(isAuthenticated, starEmail);
+router.route('/unstar/:id').post(isAuthenticated, unstarEmail);
+router.route('/starred').get(isAuthenticated, getStarredEmails);
+router.route('/reply/:id').post(isAuthenticated, replyToEmail);
+router.route('/forward/:id').post(isAuthenticated, forwardEmail);
+router.route('/track/:trackingId').get(trackEmailRead);
 
-router.route('/create').post(isAuthenticated,createEmail);
-router.route('/delete/:id').delete(isAuthenticated,deleteEmail);
-router.route('/reply/:id').post(isAuthenticated,replyToEmail);
-router.route('/forward/:id').post(isAuthenticated,forwardEmail);
-router.route('/getinbox').get(isAuthenticated,getAllEmailsInbox);
-router.route('/getsent').get(isAuthenticated,getAllEmailsSent);
-router.route('/imageload/:trackingId').get(trackEmailRead);
-router.route('/thread/:threadId').get(isAuthenticated,getEmailThread);
+// Generic id route last
+router.route('/:id').get(isAuthenticated, getEmailById);
 
-export default router
+export default router;
