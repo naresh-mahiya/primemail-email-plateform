@@ -1,7 +1,4 @@
-
-
 // export default SendEmail
-
 
 import React, { useState } from 'react';
 import { RxCross2 } from 'react-icons/rx';
@@ -24,7 +21,13 @@ const SendEmail = () => {
 
   // Handle input change
   const changeHandler = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.name === 'to') {
+      // Split the input by commas and trim each email
+      const emails = e.target.value.split(',').map(email => email.trim());
+      setFormData({ ...formData, [e.target.name]: emails });
+    } else {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
+    }
   };
 
   // Handle form submission
@@ -61,50 +64,51 @@ const SendEmail = () => {
         </div>
       </div>
 
-      {/* Email Form */}
-      <form onSubmit={submitHandler} className='flex flex-col p-3 gap-2'>
-        <input
-          onChange={changeHandler}
-          value={formData.to}
-          name='to'
-          type='email'
-          placeholder='To'
-          className='outline-none py-1 border-b border-gray-300'
-          required
-        />
-
-        <input
-          onChange={changeHandler}
-          value={formData.subject}
-          name='subject'
-          type='text'
-          placeholder='Subject'
-          className='outline-none py-1 border-b border-gray-300'
-          required
-        />
-
-        <textarea
-          onChange={changeHandler}
-          value={formData.message}
-          name='message'
-          rows={10}
-          cols={30}
-          placeholder='Write your message here...'
-          className='outline-none py-1 border-b border-gray-300'
-          required
-        />
-
-        {/* Scheduled Email Field */}
-        <label className='text-gray-600 text-sm'>Schedule Email (Optional)</label>
-        <input
-          onChange={changeHandler}
-          value={formData.scheduledAt}
-          name='scheduledAt'
-          type='datetime-local'
-          className='outline-none py-1 border-b border-gray-300'
-        />
-
-        <button type='submit' className='text-white bg-blue-600 rounded-full px-5 py-1 w-fit'>Send</button>
+      {/* Form */}
+      <form onSubmit={submitHandler} className='p-4'>
+        <div className='flex flex-col gap-4'>
+          <div>
+            <input
+              type="text"
+              name="to"
+              placeholder='To (separate multiple emails with commas)'
+              className='w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+              value={Array.isArray(formData.to) ? formData.to.join(', ') : formData.to}
+              onChange={changeHandler}
+            />
+            <p className='text-xs text-gray-500 mt-1'>Enter multiple email addresses separated by commas</p>
+          </div>
+          <input
+            type="text"
+            name="subject"
+            placeholder='Subject'
+            className='w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+            value={formData.subject}
+            onChange={changeHandler}
+          />
+          <textarea
+            name="message"
+            placeholder='Message'
+            className='w-full h-64 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+            value={formData.message}
+            onChange={changeHandler}
+          />
+          <div className='flex items-center gap-2'>
+            <input
+              type="datetime-local"
+              name="scheduledAt"
+              className='p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+              value={formData.scheduledAt}
+              onChange={changeHandler}
+            />
+            <button
+              type="submit"
+              className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600'
+            >
+              Send
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );

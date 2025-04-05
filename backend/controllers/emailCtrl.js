@@ -6,36 +6,52 @@ export const createEmail = async (req, res) => {
     try {
         const userId = req.id;//we saved it during login
         const { to, subject, message, scheduledAt } = req.body;
-        const receiver = await User.findOne({ email: to });
-        if (!receiver)
-            return res.status(404).json({ message: 'recipient not found' })
-        if (!to || !subject || !message)
+        
+        // Convert to array if it's a single email
+        const recipientEmails = Array.isArray(to) ? to : [to];
+        
+        if (!recipientEmails.length || !subject || !message)
             return res.status(400).json({ message: 'All fields are required' });
 
-        const status = scheduledAt ? 'pending' : 'sent';
+        // Find all recipients
+        const receivers = await User.find({ email: { $in: recipientEmails } });
+        
+        if (receivers.length !== recipientEmails.length)
+            return res.status(404).json({ message: 'One or more recipients not found' });
 
-        const trackingId = crypto.randomBytes(16).toString('hex')
+        const receiverIds = receivers.map(receiver => receiver._id);
+        const trackingId = crypto.randomBytes(16).toString('hex');
+        const threadId = crypto.randomBytes(16).toString('hex'); // Generate new threadId for new email
 
         const email = await Email.create({
-            to, subject, message,
+            to: recipientEmails,
+            subject,
+            message,
             senderId: userId,
-            receiverId: receiver._id,
+            receiverIds,
             scheduledAt: scheduledAt || null,
-            status,
-            trackingId
+            status: scheduledAt ? 'pending' : 'sent',
+            trackingId,
+            threadId,
+            isReply: false
         })
 
         if (!scheduledAt) {
-            await User.findByIdAndUpdate(userId, { $push: { sent: email._id } })
-            await User.findByIdAndUpdate(receiver._id, { $push: { inbox: email._id } })
-        }
-        else {
-            await User.findByIdAndUpdate(userId, { $push: { sent: email._id } })
-            //only in sentbox, not in inbox of receiver
+            // Update sender's sent box
+            await User.findByIdAndUpdate(userId, { $push: { sent: email._id } });
+            
+            // Update each receiver's inbox
+            for (const receiverId of receiverIds) {
+                await User.findByIdAndUpdate(receiverId, { $push: { inbox: email._id } });
+            }
+        } else {
+            await User.findByIdAndUpdate(userId, { $push: { sent: email._id } });
         }
 
-        // return res.status(201).json({message:'Email composed successfully', email});//any use of email???
-        return res.status(201).json({ message: scheduledAt ? 'Email scheduled successfully' : 'Email sent successfully', email });
+        return res.status(201).json({ 
+            message: scheduledAt ? 'Email scheduled successfully' : 'Email sent successfully', 
+            email 
+        });
     } catch (error) {
         console.log(error)
         res.status(500).json({ message: 'Internal server error' });
@@ -67,7 +83,11 @@ export const getAllEmailsInbox = async (req, res) => {
         const userId = req.id;
         const user = await User.findById(userId).populate({
             path: 'inbox',
-            populate: { path: 'senderId', select: 'fullname email' }
+            populate: [
+                { path: 'senderId', select: 'fullname email' },
+                { path: 'receiverIds', select: 'fullname email' }
+            ],
+            options: { sort: { createdAt: -1 } }
         })
         //send emails from inbox
         return res.status(200).json({ emails: user.inbox })
@@ -82,7 +102,11 @@ export const getAllEmailsSent = async (req, res) => {
         const userId = req.id;
         const user = await User.findById(userId).populate({
             path: 'sent',
-            populate: { path: 'receiverId', select: 'fullname email' }
+            populate: [
+                { path: 'senderId', select: 'fullname email' },
+                { path: 'receiverIds', select: 'fullname email' }
+            ],
+            options: { sort: { createdAt: -1 } }
         })
 
         return res.status(200).json({ emails: user.sent })
@@ -109,6 +133,83 @@ export const trackEmailRead = async (req, res) => {
             'base64'
         ))
     } catch (error) {
-         console.log('Error from trackEmailId',error)
+        console.log('Error from trackEmailId', error)
     }
 }
+
+export const replyToEmail = async (req, res) => {
+    try {
+        const userId = req.id;
+        const emailId = req.params.id;
+        const { message } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ message: 'Message is required' });
+        }
+
+        // Get the original email with populated sender
+        const originalEmail = await Email.findById(emailId)
+            .populate('senderId', 'email fullname')
+            .populate('receiverId', 'email fullname');
+        
+        if (!originalEmail) {
+            return res.status(404).json({ message: 'Original email not found' });
+        }
+
+        // Create the reply email with the same threadId
+        const replyEmail = await Email.create({
+            to: originalEmail.senderId.email,
+            subject: `Re: ${originalEmail.subject}`,
+            message: message,
+            senderId: userId,
+            receiverId: originalEmail.senderId._id,
+            status: 'sent',
+            trackingId: crypto.randomBytes(16).toString('hex'),
+            threadId: originalEmail.threadId, // Use the same threadId as original
+            isReply: true,
+            parentEmailId: originalEmail._id
+        });
+
+        // Update sender's sent box and receiver's inbox
+        await User.findByIdAndUpdate(userId, { $push: { sent: replyEmail._id } });
+        await User.findByIdAndUpdate(originalEmail.senderId._id, { $push: { inbox: replyEmail._id } });
+
+        // Populate the reply email with parent email data
+        const populatedReply = await Email.findById(replyEmail._id)
+            .populate('parentEmailId')
+            .populate('senderId', 'fullname email')
+            .populate('receiverId', 'fullname email');
+
+        return res.status(201).json({ 
+            message: 'Reply sent successfully',
+            email: populatedReply
+        });
+
+    } catch (error) {
+        console.log('Error in replyToEmail:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+// Add new endpoint to get email thread
+export const getEmailThread = async (req, res) => {
+    try {
+        const { threadId } = req.params;
+        const thread = await Email.find({ threadId })
+            .sort({ createdAt: 1 }) // Sort by creation time
+            .populate('senderId', 'fullname email')
+            .populate('receiverIds', 'fullname email')
+            .populate({
+                path: 'parentEmailId',
+                populate: [
+                    { path: 'senderId', select: 'fullname email' },
+                    { path: 'receiverIds', select: 'fullname email' }
+                ]
+            });
+            
+        return res.status(200).json({ thread });
+    } catch (error) {
+        console.error('Error in getEmailThread:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};

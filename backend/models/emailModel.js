@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 const emailSchema = new mongoose.Schema({
     to: {
-        type: String,
+        type: [String],
         required: true
     },
     subject: {
@@ -18,10 +18,10 @@ const emailSchema = new mongoose.Schema({
         ref:'User',   
         required:true
     },
-    receiverId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref:'User',
-        required:true
+    receiverIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'User',
+        required: true
     },
     scheduledAt:{
         type:Date,
@@ -39,6 +39,19 @@ const emailSchema = new mongoose.Schema({
     trackingId:{
         type:String,
         unique:true
+    },
+    threadId: {
+        type: String,
+        required: true
+    },
+    isReply: {
+        type: Boolean,
+        default: false
+    },
+    parentEmailId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Email',
+        default: null
     }
     
 },{timestamps:true});   

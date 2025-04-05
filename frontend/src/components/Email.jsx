@@ -26,91 +26,47 @@ const Email = ({ email }) => {
       navigate(`/sent/mail/${email._id}`)
   }
 
+  // Helper function to get recipient names
+  const getRecipientNames = () => {
+    if (!email?.receiverIds || !Array.isArray(email.receiverIds)) {
+      return email?.receiverId?.fullname || 'Unknown';
+    }
+    return email.receiverIds.map(receiver => receiver?.fullname || 'Unknown').join(', ');
+  };
+
   return (
     <div 
       onClick={openMail} 
-      className='
-        flex items-center justify-between border-b border-gray-200 px-4 py-3 text-sm 
-        hover:bg-blue-50/50 hover:shadow-md transition-all duration-200 cursor-pointer
-        h-[48px] group mx-2 rounded-lg
-      '
+      className='flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-100 hover:cursor-pointer'
     >
-      <div className='flex items-center gap-3 min-w-[200px]'>
-        <div className='text-gray-400 hover:text-gray-600 transition-colors'>
-          <MdCropSquare size={'20px'} className="group-hover:scale-110 transition-transform" />
-        </div>
-        <div className='text-gray-400 hover:text-yellow-500 transition-colors'>
-          <MdOutlineStarBorder size={'20px'} className="group-hover:scale-110 transition-transform" />
-        </div>
-        <div className='min-w-[120px]'>
-          {
-            isInbox ? (
-              <h1 className='font-medium text-gray-800 truncate group-hover:text-blue-600 transition-colors'>
-                {email.senderId.fullname}
-              </h1>
-            ) : (
-              <h1 className='font-medium text-gray-800 truncate group-hover:text-blue-600 transition-colors'>
-                To {email.receiverId.fullname}
-              </h1>
-            )
-          }
-        </div>
-
-        <div className='min-w-[200px]'>
-          <h1 className='font-medium text-gray-800 truncate group-hover:text-blue-600 transition-colors'>
-            {email?.subject}
-          </h1>
-        </div>
-      </div>
-      <div className='flex-1 ml-4 max-w-[400px]'>
-        <p className='truncate text-gray-500 group-hover:text-gray-700 transition-colors'>
-          {truncateMessage(email?.message)}
-        </p>
-      </div>
-      <div className='flex items-center gap-2 min-w-[200px] justify-end'>
-        {
-          isSent &&
-          <p className="text-blue-500">
-            {email?.read && <MdDoneAll size={'20px'} className="group-hover:scale-110 transition-transform"/>} 
-          </p>
-        }
-
-        {email.status === "pending" && (
-          <>
-            <MdScheduleSend size={20} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
-            <p className="text-sm text-gray-500 truncate group-hover:text-gray-700 transition-colors">
-              {new Date(email?.scheduledAt)
-                .toLocaleString("en-GB", {
-                  timeZone: "Asia/Kolkata",
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false
-                })
-                .replace(/\//g, "-")
-                .replace(",", " ,")}
-            </p>
-          </>
+      <div className='flex items-center gap-2 w-1/4'>
+        <MdCropSquare size={18} />
+        <MdOutlineStarBorder size={18} />
+        {isInbox ? (
+          <span className='font-medium'>{email?.senderId?.fullname || 'Unknown'}</span>
+        ) : (
+          <span className='font-medium'>{getRecipientNames()}</span>
         )}
       </div>
-
-      <div className='flex-none text-gray-500 text-sm min-w-[120px] text-right group-hover:text-gray-700 transition-colors'>
-        <p className='truncate'>
-          {new Date(email?.createdAt)
-            .toLocaleString("en-GB", {
-              timeZone: "Asia/Kolkata",
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false
-            })
-            .replace(/\//g, "-")
-            .replace(",", " ,")}
-        </p>
+      <div className='w-3/4'>
+        <div className='flex items-center gap-2'>
+          <span className='font-medium'>{email?.subject || 'No Subject'}</span>
+          <span className='text-gray-500 text-sm truncate'>{truncateMessage(email?.message)}</span>
+        </div>
+      </div>
+      <div className='flex items-center gap-2'>
+        {email?.status === 'pending' ? (
+          <MdScheduleSend size={18} className='text-gray-500' />
+        ) : isInbox ? (
+          email?.read ? (
+            <MdDoneAll size={18} className='text-blue-500' />
+          ) : (
+            <MdDone size={18} className='text-gray-500' />
+          )
+        ) : (
+          <MdDoneAll size={18} className='text-blue-500' />
+        )}
+        <span className='text-sm text-gray-500'>{new Date(email?.createdAt).toLocaleTimeString()}</span>
       </div>
     </div>
   )
