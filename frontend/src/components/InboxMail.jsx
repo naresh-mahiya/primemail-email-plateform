@@ -18,6 +18,9 @@ const InboxMail = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [showQuotedText, setShowQuotedText] = useState(false);
   const [emailThread, setEmailThread] = useState([]);
+  const [showForward, setShowForward] = useState(false);
+  const [forwardTo, setForwardTo] = useState('');
+  const [forwardMessage, setForwardMessage] = useState('');
 
   // Fetch email thread when component mounts or selectedEmail changes
   useEffect(() => {
@@ -66,6 +69,28 @@ const InboxMail = () => {
     } catch (error) {
       console.log("error from handleReplyEmail=>", error);
       toast.error(error.response?.data?.message || 'Failed to send reply');
+    }
+  }
+
+  //handle forward email
+  const handleForwardEmail = async () => {
+    try {
+      const forwardedContent = `${forwardMessage}\n\n---------- Forwarded message ----------\nFrom: ${selectedEmail.senderId.fullname} <${selectedEmail.senderId.email}>\nDate: ${new Date(selectedEmail.createdAt).toLocaleString()}\nSubject: ${selectedEmail.subject}\nTo: ${selectedEmail.receiverIds.map(receiver => `${receiver.fullname} <${receiver.email}>`).join(', ')}\n\n${selectedEmail.message}`;
+      
+      const res = await axios.post(`http://localhost:8080/api/v1/email/forward/${params.id}`, 
+        { 
+          to: forwardTo,
+          message: forwardedContent 
+        },
+        { withCredentials: true }
+      )
+      toast.success('Email forwarded successfully');
+      setShowForward(false);
+      setForwardTo('');
+      setForwardMessage('');
+    } catch (error) {
+      console.log("error from handleForwardEmail=>", error);
+      toast.error(error.response?.data?.message || 'Failed to forward email');
     }
   }
 
@@ -150,7 +175,7 @@ const InboxMail = () => {
                   <div onClick={() => setShowReply(!showReply)} className='p-2 rounded-full hover:bg-gray-200 hover:cursor-pointer'>
                     <FaReply size={'15px'} />
                   </div>
-                  <div className='p-2 rounded-full hover:bg-gray-200 hover:cursor-pointer'>
+                  <div onClick={() => setShowForward(true)} className='p-2 rounded-full hover:bg-gray-200 hover:cursor-pointer'>
                     <TiArrowForward size={'23px'} />
                   </div>
                   <div className="text-sm text-gray-400">
@@ -193,6 +218,66 @@ const InboxMail = () => {
             </div>
           ))}
         </div>
+
+        {/* Forward Composer */}
+        {showForward && (
+          <div className='mt-8 border rounded-lg p-4'>
+            <div className='mb-4'>
+              <div className='text-sm text-gray-600'>
+                <span className='font-medium'>To: </span>
+                <input
+                  type="text"
+                  className='border rounded px-2 py-1 w-full'
+                  placeholder='Enter recipient emails (separate with commas)'
+                  value={forwardTo}
+                  onChange={(e) => setForwardTo(e.target.value)}
+                />
+              </div>
+              <div className='text-sm text-gray-600 mt-2'>
+                <span className='font-medium'>Subject: </span>
+                Fwd: {selectedEmail.subject}
+              </div>
+            </div>
+            
+            <textarea
+              className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4'
+              placeholder='Add a message (optional)'
+              value={forwardMessage}
+              onChange={(e) => setForwardMessage(e.target.value)}
+            />
+
+            {/* Original Email Preview */}
+            <div className='border-t pt-4'>
+              <div className='text-sm text-gray-500 mb-2'>---------- Forwarded message ----------</div>
+              <div className='text-sm text-gray-600'>
+                <div>From: {selectedEmail.senderId.fullname} &lt;{selectedEmail.senderId.email}&gt;</div>
+                <div>Date: {new Date(selectedEmail.createdAt).toLocaleString()}</div>
+                <div>Subject: {selectedEmail.subject}</div>
+                <div>To: {selectedEmail.receiverIds.map(receiver => `${receiver.fullname} <${receiver.email}>`).join(', ')}</div>
+                <div className='mt-4 whitespace-pre-wrap'>{selectedEmail.message}</div>
+              </div>
+            </div>
+
+            <div className='flex justify-end gap-2 mt-4'>
+              <button
+                className='px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg'
+                onClick={() => {
+                  setShowForward(false);
+                  setForwardTo('');
+                  setForwardMessage('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className='px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600'
+                onClick={handleForwardEmail}
+              >
+                Forward
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Reply Composer */}
         {showReply && (

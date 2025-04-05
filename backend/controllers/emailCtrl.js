@@ -213,3 +213,78 @@ export const getEmailThread = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+export const forwardEmail = async (req, res) => {
+    try {
+        const userId = req.id;
+        const emailId = req.params.id;
+        const { to, message } = req.body;
+
+        if (!to) {
+            return res.status(400).json({ message: 'Recipient email is required' });
+        }
+
+        // Get the original email with populated sender
+        const originalEmail = await Email.findById(emailId)
+            .populate('senderId', 'email fullname')
+            .populate('receiverIds', 'email fullname');
+        
+        if (!originalEmail) {
+            return res.status(404).json({ message: 'Original email not found' });
+        }
+
+        // Convert to array if it's a single email
+        const recipientEmails = Array.isArray(to) ? to : [to];
+        
+        // Find all recipients
+        const receivers = await User.find({ email: { $in: recipientEmails } });
+        
+        if (receivers.length !== recipientEmails.length)
+            return res.status(404).json({ message: 'One or more recipients not found' });
+
+        const receiverIds = receivers.map(receiver => receiver._id);
+        const trackingId = crypto.randomBytes(16).toString('hex');
+        const threadId = crypto.randomBytes(16).toString('hex'); // New thread for forwarded email
+
+        // Create forwarded email
+        const forwardedEmail = await Email.create({
+            to: recipientEmails,
+            subject: `Fwd: ${originalEmail.subject}`,
+            message: message || `---------- Forwarded message ----------\nFrom: ${originalEmail.senderId.fullname} <${originalEmail.senderId.email}>\nDate: ${originalEmail.createdAt}\nSubject: ${originalEmail.subject}\nTo: ${originalEmail.receiverIds.map(r => r.fullname).join(', ')}\n\n${originalEmail.message}`,
+            senderId: userId,
+            receiverIds,
+            status: 'sent',
+            trackingId,
+            threadId,
+            isReply: false,
+            parentEmailId: originalEmail._id
+        });
+
+        // Update sender's sent box and each receiver's inbox
+        await User.findByIdAndUpdate(userId, { $push: { sent: forwardedEmail._id } });
+        for (const receiverId of receiverIds) {
+            await User.findByIdAndUpdate(receiverId, { $push: { inbox: forwardedEmail._id } });
+        }
+
+        // Populate the forwarded email with all necessary data
+        const populatedForward = await Email.findById(forwardedEmail._id)
+            .populate('senderId', 'fullname email')
+            .populate('receiverIds', 'fullname email')
+            .populate({
+                path: 'parentEmailId',
+                populate: [
+                    { path: 'senderId', select: 'fullname email' },
+                    { path: 'receiverIds', select: 'fullname email' }
+                ]
+            });
+
+        return res.status(201).json({ 
+            message: 'Email forwarded successfully',
+            email: populatedForward
+        });
+
+    } catch (error) {
+        console.log('Error in forwardEmail:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}
