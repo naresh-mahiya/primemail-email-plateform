@@ -403,3 +403,52 @@ export const getEmailById = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+export const sendWelcomeEmail = async (userEmail, userName) => {
+  try {
+    // Find the system user (welcome@primemail.com)
+    const systemUser = await User.findOne({ email: 'welcome@primemail.com' });
+    if (!systemUser) {
+      throw new Error('System user not found');
+    }
+
+    // Find the new user
+    const newUser = await User.findOne({ email: userEmail });
+    if (!newUser) {
+      throw new Error('New user not found');
+    }
+
+    const welcomeEmail = {
+      subject: "Welcome to PrimeMail!",
+      message: `Dear ${userName},\n\nWelcome to PrimeMail! We're thrilled to have you join our community.\n\nAs the developer behind PrimeMail, I'm incredibly excited to share this platform with you. This project is very close to my heart and an important part of my learning journey — and I'd truly love to hear what you think!\n\n💬 Please feel free to send your feedback, suggestions, or even just some good wishes to me at:  \n📧 **support@primemail.com**\n\nYour thoughts won't just help improve PrimeMail — they'll mean a lot to me personally as I grow as a developer.\n\nThank you for being a part of this journey.\n\nBest regards,  \n**Naresh Mahiya**`,
+      to: userEmail
+    };
+
+    // Generate trackingId and threadId
+    const trackingId = crypto.randomBytes(16).toString('hex');
+    const threadId = crypto.randomBytes(16).toString('hex');
+
+    // Create the welcome email
+    const email = await Email.create({
+      subject: welcomeEmail.subject,
+      message: welcomeEmail.message,
+      senderId: systemUser._id,
+      receiverIds: [newUser._id],
+      threadId,
+      trackingId,
+      status: 'sent',
+      isReply: false
+    });
+
+    // Add the email to the user's inbox
+    await User.findByIdAndUpdate(newUser._id, { $push: { inbox: email._id } });
+    
+    // Add the email to system user's sent box
+    await User.findByIdAndUpdate(systemUser._id, { $push: { sent: email._id } });
+
+    return email;
+  } catch (error) {
+    console.log("error from sendWelcomeEmail=>", error);
+    throw error;
+  }
+};

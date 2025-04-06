@@ -1,6 +1,7 @@
 import { User } from '../models/userModel.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { sendWelcomeEmail } from './emailCtrl.js'
 
 export const register = async (req, res) => {
     try {
@@ -11,16 +12,24 @@ export const register = async (req, res) => {
         if (user)
             return res.status(400).json({ message: "user already exists with this email", success: false })
 
-
         //create user
         const profilePhoto= 'https://avatar.iran.liara.run/public/boy'
         const hashPassword = await bcrypt.hash(password, 10)
-        await User.create({
+        const newUser = await User.create({
             fullname,
             email,
             password: hashPassword,
             profilePhoto
         })
+
+        // Send welcome email
+        try {
+            await sendWelcomeEmail(email, fullname);
+        } catch (error) {
+            console.log("Failed to send welcome email:", error);
+            // Don't fail the registration if welcome email fails
+        }
+
         return res.status(201).json({
             message: "Account created successfully",
             success: true
