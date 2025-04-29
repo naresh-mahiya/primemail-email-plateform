@@ -16,9 +16,7 @@ PrimeMail is a modern, feature-rich email platform built with the MERN stack and
 - **Responsive UI**: Modern interface built with React and Tailwind CSS
 
 
-## Coming Soon
-
-We're actively working on enhancing PrimeMail with these exciting features:
+##Actively working hard on the following features:
 
 - **Attachment Support**: Send and receive files of various formats
 - **Advanced Search**: Find any email instantly with powerful search capabilities
