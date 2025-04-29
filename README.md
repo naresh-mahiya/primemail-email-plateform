@@ -6,7 +6,7 @@ PrimeMail is a modern, feature-rich email platform built with the MERN stack and
 
 ## Features
 
-- **User Authentication**: Secure registration and login system
+- **User Authentication**: registration and login system with welcome email on signup
 - **Email Composition**: Create and send emails to multiple recipients
 - **Email Organization**: Inbox, Sent, and Starred views
 - **Email Threading**: View complete email conversations in threads
@@ -14,6 +14,23 @@ PrimeMail is a modern, feature-rich email platform built with the MERN stack and
 - **Email Scheduling**: Schedule emails to be sent at a later time
 - **Email Tracking**: Track when emails are read by recipients with blue read ticks
 - **Responsive UI**: Modern interface built with React and Tailwind CSS
+
+
+## Screenshots
+
+### Mail View
+![Mail View](./screenshots/mail-view.png)
+
+### Sent Box
+![Sent Box](./screenshots/sentbox.png)
+
+### Reply Mail
+![Reply Mail](./screenshots/reply-mail.png)
+
+### Sign Up Page
+![Sign Up Page](./screenshots/signup-page.png)
+
+
 
 
 ## Coming Soon
