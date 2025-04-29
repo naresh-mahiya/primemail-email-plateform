@@ -27,13 +27,9 @@ PrimeMail is a modern, feature-rich email platform built with the MERN stack and
 ### Reply Mail
 ![Reply Mail](./screenshots/reply-mail.png)
 
-### Sign Up Page
-![Sign Up Page](./screenshots/signup-page.png)
 
 
-
-
-##Actively working hard on the following features:
+## <span style="color:blue; font-weight:bold;">Actively working hard on the following features:</span>
 
 - **Attachment Support**: Send and receive files of various formats
 - **Advanced Search**: Find any email instantly with powerful search capabilities
