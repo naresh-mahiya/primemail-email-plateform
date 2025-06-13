@@ -31,6 +31,12 @@ const InboxMail = () => {
             { withCredentials: true }
           );
           setEmailThread(res.data.thread);
+
+          // Track email read by fetching the 1x1 pixel image
+          if (!selectedEmail.read) {
+            const img = new Image();
+            img.src = `http://localhost:8080/api/v1/email/track/${selectedEmail.trackingId}`;
+          }
         } catch (error) {
           console.error('Error fetching thread:', error);
         }
@@ -325,5 +331,3 @@ const InboxMail = () => {
 }
 
 export default InboxMail
-
-

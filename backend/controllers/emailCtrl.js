@@ -150,7 +150,7 @@ export const replyToEmail = async (req, res) => {
         // Get the original email with populated sender
         const originalEmail = await Email.findById(emailId)
             .populate('senderId', 'email fullname')
-            .populate('receiverId', 'email fullname');
+            .populate('receiverIds', 'email fullname');
         
         if (!originalEmail) {
             return res.status(404).json({ message: 'Original email not found' });
@@ -162,7 +162,7 @@ export const replyToEmail = async (req, res) => {
             subject: `Re: ${originalEmail.subject}`,
             message: message,
             senderId: userId,
-            receiverId: originalEmail.senderId._id,
+            receiverIds: originalEmail.senderId._id,
             status: 'sent',
             trackingId: crypto.randomBytes(16).toString('hex'),
             threadId: originalEmail.threadId, // Use the same threadId as original
@@ -178,7 +178,7 @@ export const replyToEmail = async (req, res) => {
         const populatedReply = await Email.findById(replyEmail._id)
             .populate('parentEmailId')
             .populate('senderId', 'fullname email')
-            .populate('receiverId', 'fullname email');
+            .populate('receiverIds', 'fullname email');
 
         return res.status(201).json({ 
             message: 'Reply sent successfully',

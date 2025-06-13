@@ -22,17 +22,18 @@ const SentMail = () => {
     const [showForward, setShowForward] = useState(false);
     const [forwardTo, setForwardTo] = useState('');
     const [forwardMessage, setForwardMessage] = useState('');
+    const [readReceipt, setReadReceipt] = useState(false);
 
-    // Fetch email thread when component mounts or selectedEmail changes
     useEffect(() => {
         const fetchEmailThread = async () => {
             if (selectedEmail) {
                 try {
                     if (selectedEmail.threadId) {
-                        const res = await axios.get(`http://localhost:8080/api/v1/email/thread/${selectedEmail.threadId}`, 
+                        const res = await axios.get(`http://localhost:8080/api/v1/email/thread/${selectedEmail.threadId}`,
                             { withCredentials: true }
                         );
                         setEmailThread(res.data.thread);
+                        setReadReceipt(res.data.readReceipt);
                     } else {
                         setEmailThread([selectedEmail]);
                     }
@@ -44,6 +45,10 @@ const SentMail = () => {
         };
         fetchEmailThread();
     }, [selectedEmail]);
+
+    const renderReadReceipt = () => {
+        return readReceipt ? <span className="text-green-500">✔ Read</span> : <span className="text-gray-500">✖ Unread</span>;
+    };
 
     //delete email handler
     const deleteHandler = async () => {
@@ -60,7 +65,7 @@ const SentMail = () => {
     //handle submit reply
     const handleSubmitReply = async () => {
         try {
-            const res = await axios.post(`http://localhost:8080/api/v1/email/reply/${params.id}`, 
+            const res = await axios.post(`http://localhost:8080/api/v1/email/reply/${params.id}`,
                 { message: replyMessage },
                 { withCredentials: true }
             )
@@ -68,7 +73,7 @@ const SentMail = () => {
             setShowReply(false);
             setReplyMessage('');
             // Refresh the thread after sending reply
-            const threadRes = await axios.get(`http://localhost:8080/api/v1/email/thread/${selectedEmail.threadId}`, 
+            const threadRes = await axios.get(`http://localhost:8080/api/v1/email/thread/${selectedEmail.threadId}`,
                 { withCredentials: true }
             );
             setEmailThread(threadRes.data.thread);
@@ -82,11 +87,11 @@ const SentMail = () => {
     const handleForwardEmail = async () => {
         try {
             const forwardedContent = `${forwardMessage}\n\n---------- Forwarded message ----------\nFrom: ${selectedEmail.senderId.fullname} <${selectedEmail.senderId.email}>\nDate: ${new Date(selectedEmail.createdAt).toLocaleString()}\nSubject: ${selectedEmail.subject}\nTo: ${selectedEmail.receiverIds.map(receiver => `${receiver.fullname} <${receiver.email}>`).join(', ')}\n\n${selectedEmail.message}`;
-            
-            const res = await axios.post(`http://localhost:8080/api/v1/email/forward/${params.id}`, 
-                { 
+
+            const res = await axios.post(`http://localhost:8080/api/v1/email/forward/${params.id}`,
+                {
                     to: forwardTo,
-                    message: forwardedContent 
+                    message: forwardedContent
                 },
                 { withCredentials: true }
             )
@@ -151,7 +156,7 @@ const SentMail = () => {
                         <span className='text-sm bg-gray-200 rounded-md px-2'>sent</span>
                     </div>
                     <div className='flex items-center gap-2'>
-                        <button 
+                        <button
                             onClick={() => setShowOriginal(!showOriginal)}
                             className='text-sm text-gray-600 hover:text-gray-800'
                         >
@@ -163,11 +168,10 @@ const SentMail = () => {
                 {/* Email Thread */}
                 <div className="email-thread space-y-4">
                     {emailThread.map((email, index) => (
-                        <div 
-                            key={email._id} 
-                            className={`email-message p-4 rounded-lg ${
-                                index === emailThread.length - 1 ? 'bg-gray-50 border border-gray-200' : 'bg-white'
-                            }`}
+                        <div
+                            key={email._id}
+                            className={`email-message p-4 rounded-lg ${index === emailThread.length - 1 ? 'bg-gray-50 border border-gray-200' : 'bg-white'
+                                }`}
                         >
                             <div className="email-header flex justify-between items-center mb-2">
                                 <div className="text-sm text-gray-600">
@@ -189,7 +193,7 @@ const SentMail = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className='flex items-center gap-2'>
                                     <div onClick={() => setShowReply(!showReply)} className='p-2 rounded-full hover:bg-gray-200 hover:cursor-pointer'>
                                         <FaReply size={'15px'} />
                                     </div>
@@ -206,7 +210,7 @@ const SentMail = () => {
                                     <div>
                                         <div className="mb-4">{email.message}</div>
                                         <div className="border-t pt-4">
-                                            <div 
+                                            <div
                                                 className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
                                                 onClick={() => setShowQuotedText(!showQuotedText)}
                                             >
@@ -256,7 +260,7 @@ const SentMail = () => {
                                 Fwd: {selectedEmail.subject}
                             </div>
                         </div>
-                        
+
                         <textarea
                             className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4'
                             placeholder='Add a message (optional)'
@@ -310,7 +314,7 @@ const SentMail = () => {
                                 Re: {selectedEmail.subject}
                             </div>
                         </div>
-                        
+
                         <textarea
                             className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
                             placeholder='Write your reply...'
@@ -320,7 +324,7 @@ const SentMail = () => {
 
                         {/* Quoted Text Section */}
                         <div className='mt-4 border-t pt-4'>
-                            <div 
+                            <div
                                 className='flex items-center gap-2 text-sm text-gray-600 cursor-pointer'
                                 onClick={() => setShowQuotedText(!showQuotedText)}
                             >
@@ -353,6 +357,10 @@ const SentMail = () => {
                         </div>
                     </div>
                 )}
+            </div>
+            <div className='flex justify-between items-center'>
+                <h2 className='text-lg font-bold'>Email Details</h2>
+                {renderReadReceipt()}
             </div>
         </div>
     )

@@ -106,15 +106,14 @@ const Email = ({ email, onDelete }) => {
       <div className='flex items-center gap-2'>
         {email?.status === 'pending' ? (
           <MdScheduleSend size={18} className='text-gray-500' />
-        ) : isInbox ? (
+        ) : isSent? (
+          // Show sent and read status in sent box
           email?.read ? (
             <MdDoneAll size={18} className='text-blue-500' />
           ) : (
             <MdDone size={18} className='text-gray-500' />
           )
-        ) : (
-          <MdDoneAll size={18} className='text-blue-500' />
-        )}
+        ):null }
         <span className='text-sm text-gray-500'>{new Date(email?.createdAt).toLocaleTimeString()}</span>
       </div>
     </div>
