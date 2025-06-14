@@ -9,12 +9,11 @@ import Login from './components/Login'
 import SignUp from './components/SignUp'
 import { Toaster } from 'react-hot-toast'
 import SentBox from './components/SentBox'
-import InboxMail from './components/inboxMail'
-import SentMail from './components/sentMail'
+import InboxMail from './components/InboxMail'
+import SentMail from './components/SentMail'
 import StarredMail from './components/StarredMail'
 import AICompose from './components/AICompose'
 import { useState } from 'react'  
-import { useEffect } from 'react'
 
 
 
