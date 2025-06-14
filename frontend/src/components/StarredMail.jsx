@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { toast } from 'react-hot-toast';
 import Email from './Email';
 import { IoMdArrowBack } from "react-icons/io";
@@ -24,7 +24,7 @@ const StarredMail = () => {
 
     const fetchStarredEmails = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/email/starred', { withCredentials: true });
+            const res = await api.get('api/v1/email/starred', { withCredentials: true });
             setEmails(res.data.emails);
         } catch (error) {
             console.log("error from fetchStarredEmails=>", error);
@@ -35,7 +35,7 @@ const StarredMail = () => {
     const fetchEmailThread = async (emailId) => {
         try {
             // First get the email to get its threadId
-            const emailRes = await axios.get(`http://localhost:8080/api/v1/email/${emailId}`, { withCredentials: true });
+            const emailRes = await api.get(`api/v1/email/${emailId}`, { withCredentials: true });
             const email = emailRes.data.email;
             
             if (!email || !email.threadId) {
@@ -43,7 +43,7 @@ const StarredMail = () => {
             }
 
             // Then fetch the thread using the threadId
-            const threadRes = await axios.get(`http://localhost:8080/api/v1/email/thread/${email.threadId}`, { withCredentials: true });
+            const threadRes = await api.get(`api/v1/email/thread/${email.threadId}`, { withCredentials: true });
             setSelectedEmail(email);
             setEmailThread(threadRes.data.thread);
         } catch (error) {

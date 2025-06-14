@@ -7,7 +7,7 @@ import { TiArrowForward } from "react-icons/ti";
 import { MdKeyboardArrowLeft, MdKeyboardArrowRight, MdOutlineMarkEmailUnread, MdOutlineWatchLater, MdDeleteOutline, MdOutlineAddTask, MdOutlineReportGmailerrorred, MdOutlineDriveFileMove, MdOutlineMore } from "react-icons/md";
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast'
-import axios from 'axios'
+import api from '../api'
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 
 const SentMail = () => {
@@ -29,7 +29,7 @@ const SentMail = () => {
             if (selectedEmail) {
                 try {
                     if (selectedEmail.threadId) {
-                        const res = await axios.get(`http://localhost:8080/api/v1/email/thread/${selectedEmail.threadId}`,
+                        const res = await api.get(`api/v1/email/thread/${selectedEmail.threadId}`,
                             { withCredentials: true }
                         );
                         setEmailThread(res.data.thread);
@@ -53,7 +53,7 @@ const SentMail = () => {
     //delete email handler
     const deleteHandler = async () => {
         try {
-            const res = await axios.delete(`http://localhost:8080/api/v1/email/delete/${params.id}`, { withCredentials: true })
+            const res = await api.delete(`api/v1/email/delete/${params.id}`, { withCredentials: true })
             toast.success(res.data.message)
             navigate('/sent');
         } catch (error) {
@@ -65,7 +65,7 @@ const SentMail = () => {
     //handle submit reply
     const handleSubmitReply = async () => {
         try {
-            const res = await axios.post(`http://localhost:8080/api/v1/email/reply/${params.id}`,
+            const res = await api.post(`api/v1/email/reply/${params.id}`,
                 { message: replyMessage },
                 { withCredentials: true }
             )
@@ -73,7 +73,7 @@ const SentMail = () => {
             setShowReply(false);
             setReplyMessage('');
             // Refresh the thread after sending reply
-            const threadRes = await axios.get(`http://localhost:8080/api/v1/email/thread/${selectedEmail.threadId}`,
+            const threadRes = await api.get(`api/v1/email/thread/${selectedEmail.threadId}`,
                 { withCredentials: true }
             );
             setEmailThread(threadRes.data.thread);
@@ -88,7 +88,7 @@ const SentMail = () => {
         try {
             const forwardedContent = `${forwardMessage}\n\n---------- Forwarded message ----------\nFrom: ${selectedEmail.senderId.fullname} <${selectedEmail.senderId.email}>\nDate: ${new Date(selectedEmail.createdAt).toLocaleString()}\nSubject: ${selectedEmail.subject}\nTo: ${selectedEmail.receiverIds.map(receiver => `${receiver.fullname} <${receiver.email}>`).join(', ')}\n\n${selectedEmail.message}`;
 
-            const res = await axios.post(`http://localhost:8080/api/v1/email/forward/${params.id}`,
+            const res = await api.post(`api/v1/email/forward/${params.id}`,
                 {
                     to: forwardTo,
                     message: forwardedContent

@@ -8,7 +8,7 @@ import { IoLogOutOutline } from "react-icons/io5";
 import Avatar from 'react-avatar';
 import { useDispatch, useSelector } from 'react-redux'
 import { setAuthUser, setSearchText } from '../redux/appSlice'
-import axios from 'axios'
+import api from '../api'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom';
 
@@ -43,7 +43,7 @@ const Navbar = () => {
 
     const logoutHandler = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/user/logout');
+            const res = await api.get('api/v1/user/logout');
             toast.success(res.data.message);
     
             // Clear persisted redux data

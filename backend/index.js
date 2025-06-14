@@ -11,17 +11,18 @@ import './controllers/emailSchedular.js'
 dotenv.config();
 const app = express();
 connectDB();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 //middleware
 app.use(express.urlencoded({extended:true})); //when handling form submissions
 app.use(express.json());
 app.use(cookieParser());
 
-const corsOptions={
-    origin:'http://localhost:5173',
-    credentials:true,
-}
+const corsOptions = {
+    // origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin:true,
+    credentials: true,
+};
 app.use(cors(corsOptions));
 
 // app.get('/',async (req,res)=>{ res.status(200).json({message:'running okay'})})

@@ -3,8 +3,9 @@ import { MdScheduleSend, MdDone, MdDoneAll, MdCropSquare, MdOutlineStarBorder, M
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { setSelectedEmail } from '../redux/appSlice'
-import axios from 'axios'
 import { toast } from 'react-hot-toast'
+import api from '../api'
+
 
 const Email = ({ email, onDelete, isSelected, onSelect }) => {
   const location = useLocation();
@@ -20,7 +21,7 @@ const Email = ({ email, onDelete, isSelected, onSelect }) => {
     // Check if email is starred
     const checkStarred = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/api/v1/email/starred', { withCredentials: true });
+        const res = await api.get('api/v1/email/starred', { withCredentials: true });
         setIsStarredStatus(res.data.emails.some(e => e._id === email._id));
       } catch (error) {
         console.log("error from checkStarred=>", error);
@@ -33,10 +34,10 @@ const Email = ({ email, onDelete, isSelected, onSelect }) => {
     e.stopPropagation();
     try {
       if (isStarredStatus) {
-        await axios.post(`http://localhost:8080/api/v1/email/unstar/${email._id}`, {}, { withCredentials: true });
+        await api.post(`api/v1/email/unstar/${email._id}`, {}, { withCredentials: true });
         toast.success('Email unstarred');
       } else {
-        await axios.post(`http://localhost:8080/api/v1/email/star/${email._id}`, {}, { withCredentials: true });
+        await api.post(`api/v1/email/star/${email._id}`, {}, { withCredentials: true });
         toast.success('Email starred');
       }
       setIsStarredStatus(!isStarredStatus);

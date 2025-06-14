@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api'
 import { toast } from 'react-hot-toast'
 import { MdEmail, MdLock, MdPerson } from 'react-icons/md'
 
@@ -51,7 +51,7 @@ const SignUp = () => {
         }
 
         try {
-            const res = await axios.post('http://localhost:8080/api/v1/user/register',
+            const res = await api.post('api/v1/user/register',
                 {
                     ...input,
                     email: `${input.email}@primemail.com`

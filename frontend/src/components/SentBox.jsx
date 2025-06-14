@@ -3,7 +3,7 @@ import { MdCropSquare, MdInbox, MdKeyboardArrowLeft, MdKeyboardArrowRight } from
 import { FaCaretDown, FaUserFriends } from "react-icons/fa";
 import { IoMdMore, IoMdRefresh } from 'react-icons/io';
 import Emails from './Emails';
-import axios from 'axios';
+import api from '../api';
 
 const SentBox = () => {
     const [selectedEmails, setSelectedEmails] = useState([]);
@@ -11,7 +11,7 @@ const SentBox = () => {
 
     const deleteSelectedEmails = async () => {
         try {
-            await axios.post('http://localhost:8080/api/v1/email/deleteMany', { ids: selectedEmails },{withCredentials:true});
+            await api.post('api/v1/email/deleteMany', { ids: selectedEmails },{withCredentials:true});
             setRefresh(!refresh); // Toggle refresh state to trigger useEffect
         } catch (error) {
             console.error('Error deleting emails:', error);

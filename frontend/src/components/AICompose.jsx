@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api'
+
 
 const AICompose = ({ onClose, onInsert }) => {
   const [prompt, setPrompt] = useState('');
@@ -10,8 +11,8 @@ const AICompose = ({ onClose, onInsert }) => {
     if (!prompt.trim()) return;
     setLoading(true);
     try {
-      const { data } = await axios.post(
-        'http://localhost:8080/api/v1/ai/compose',
+      const { data } = await api.post(
+        'api/v1/ai/compose',
         { prompt },
         { withCredentials: true }
       );

@@ -4,7 +4,8 @@ import { FaCaretDown, FaUserFriends } from "react-icons/fa";
 import { IoMdMore, IoMdRefresh } from 'react-icons/io';
 import { GoTag } from "react-icons/go";
 import Emails from './Emails';
-import axios from 'axios';
+import api from '../api'
+
 
 const mailType = [
     {
@@ -30,7 +31,7 @@ const Inbox = () => {
 
     const deleteSelectedEmails = async () => {
         try {
-            await axios.post('http://localhost:8080/api/v1/email/deleteMany', { ids: selectedEmails });
+            await api.post('api/v1/email/deleteMany', { ids: selectedEmails });
             setRefresh(!refresh); // Toggle refresh state to trigger useEffect
         } catch (error) {
             console.error('Error deleting emails:', error);
