@@ -1,5 +1,5 @@
 import express from 'express'
-import { trackEmailRead, createEmail, replyToEmail, deleteEmail, getAllEmailsInbox, getAllEmailsSent, getEmailThread, forwardEmail, starEmail, unstarEmail, getStarredEmails, getEmailById } from '../controllers/emailCtrl.js';
+import { trackEmailRead, createEmail, replyToEmail, deleteEmail, getAllEmailsInbox, getAllEmailsSent, getEmailThread, forwardEmail, starEmail, unstarEmail, getStarredEmails, getEmailById, deleteManyEmails } from '../controllers/emailCtrl.js';
 import isAuthenticated from '../middleware/isAuthenticated.js'
 
 const router = express.Router();
@@ -7,6 +7,7 @@ const router = express.Router();
 // Specific routes first
 router.route('/create').post(isAuthenticated, createEmail);
 router.route('/delete/:id').delete(isAuthenticated, deleteEmail);
+router.route('/deleteMany').post(isAuthenticated, deleteManyEmails);
 router.route('/getinbox').get(isAuthenticated, getAllEmailsInbox);
 router.route('/getsent').get(isAuthenticated, getAllEmailsSent);
 router.route('/thread/:threadId').get(isAuthenticated, getEmailThread);

@@ -12,6 +12,8 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom';
 
+import { persistor } from '../redux/store' 
+
 const Navbar = () => {
     const { user } = useSelector(store => store.app)
     const [text, setText] = useState('')
@@ -42,11 +44,23 @@ const Navbar = () => {
     const logoutHandler = async () => {
         try {
             const res = await axios.get('http://localhost:8080/api/v1/user/logout');
-            toast.success(res.data.message)
+            toast.success(res.data.message);
+    
+            // Clear persisted redux data
+            await persistor.purge();  
+    
+            // Clear app state manually if needed
             dispatch(setAuthUser(null));
-            navigate('/login')
+    
+            // Optionally clear localStorage / sessionStorage items related to auth
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+    
+            // Navigate to login
+            navigate('/login');
         } catch (error) {
-            console.log(error)
+            console.log(error);
+            toast.error("Logout failed!");
         }
     }
 

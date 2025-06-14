@@ -30,9 +30,9 @@ const Login = () => {
             )
             console.log(res.data)
             if (res.data.success) {
-                navigate('/')
                 toast.success(res.data.message);
                 dispatch(setAuthUser(res.data.user));
+                navigate('/')
             }
         } catch (error) {
             console.log(error)

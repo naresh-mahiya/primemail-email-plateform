@@ -6,7 +6,7 @@ import { setSelectedEmail } from '../redux/appSlice'
 import axios from 'axios'
 import { toast } from 'react-hot-toast'
 
-const Email = ({ email, onDelete }) => {
+const Email = ({ email, onDelete, isSelected, onSelect }) => {
   const location = useLocation();
   const isInbox = location.pathname === '/'
   const isSent = location.pathname === '/sent'
@@ -77,7 +77,12 @@ const Email = ({ email, onDelete }) => {
       className='flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-100 hover:cursor-pointer'
     >
       <div className='flex items-center gap-2 w-1/4'>
-        <MdCropSquare size={18} />
+        <input 
+          type="checkbox" 
+          checked={isSelected} 
+          onChange={() => onSelect(email._id)} 
+          onClick={(e) => e.stopPropagation()} // Prevent openMail on checkbox click
+        />
         {isStarredStatus ? (
           <MdStar 
             size={18} 

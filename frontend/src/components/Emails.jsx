@@ -4,8 +4,9 @@ import useGetInboxEmails from '../hooks/useGetInboxEmails'
 import useGetSentEmails from '../hooks/useGetSentEmails'
 import { useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios'; // Import axios
 
-const Emails = () => {
+const Emails = ({ setSelectedEmails, selectedEmails=[], refresh }) => {
 
   const location = useLocation();//gives current route
   const isInbox = location.pathname === '/';
@@ -14,21 +15,28 @@ const Emails = () => {
   if (isInbox) useGetInboxEmails();
   if (isSent) useGetSentEmails();
 
+  // useEffect(() => {
+  //   if (isInbox) useGetInboxEmails();
+  //   if (isSent) useGetSentEmails();
+  // }, [refresh]); // Trigger fetching emails when refresh changes
 
   const { sentEmails, inboxEmails, searchText } = useSelector(store => store.app)
 
-
-
   const emails = isInbox ? inboxEmails || [] : isSent ? sentEmails || [] : [];
 
-
-
-  //we will not disturb original emails state so..make new for filtered
   const [filterEmail, setFilterEmail] = useState([]);//no filter then show all emails..so initially emails
 
-  useEffect(() => {
+  const toggleEmailSelection = (emailId) => {
+    setSelectedEmails(prevSelected =>
+      prevSelected.includes(emailId)
+        ? prevSelected.filter(id => id !== emailId)
+        : [...prevSelected, emailId]
+    );
+  };
 
-    
+
+
+  useEffect(() => {
     if (!emails || emails.length === 0) {
       console.log("Emails not available yet");
       return;
@@ -37,14 +45,13 @@ const Emails = () => {
       return email.subject.toLowerCase().includes(searchText.toLowerCase()) || email.to.toLowerCase().includes(searchText.toLowerCase());
     })
     setFilterEmail(filteredEmail);
-  }, [searchText,inboxEmails])//sentEmails nhi laga ra,sent kholke compose karna try???hihihihhaa
-
+  }, [searchText,inboxEmails])
 
   return (
     <div>
       {
         filterEmail.length > 0 ?
-          (filterEmail.map((email) => <Email key={email._id} email={email} />))
+          (filterEmail.map((email) => <Email key={email._id} email={email} onSelect={toggleEmailSelection} isSelected={selectedEmails.includes(email._id)} />))
           :
           (<p className='text-centre text-gray-500'>No emails found</p>)
       }

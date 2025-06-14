@@ -452,3 +452,30 @@ export const sendWelcomeEmail = async (userEmail, userName) => {
     throw error;
   }
 };
+
+export const deleteManyEmails = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: 'No email IDs provided' });
+        }
+
+        // Delete emails from the database
+        await Email.deleteMany({ _id: { $in: ids } });
+
+        // Optionally, you can also remove these emails from users' inboxes/sent boxes
+        await User.updateMany(
+            { inbox: { $in: ids } },
+            { $pull: { inbox: { $in: ids } } }
+        );
+        await User.updateMany(
+            { sent: { $in: ids } },
+            { $pull: { sent: { $in: ids } } }
+        );
+
+        res.status(200).json({ message: 'Emails deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting emails:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
