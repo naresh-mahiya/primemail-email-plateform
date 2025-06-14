@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors'
 import userRoute from './routes/userRoute.js'
 import emailRoute from './routes/emailRoute.js'
+import aiRoute from './routes/aiRoute.js'
 import './controllers/emailSchedular.js'
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use(cors(corsOptions));
 //routes
 app.use('/api/v1/user',userRoute);
 app.use('/api/v1/email',emailRoute);
+app.use('/api/v1/ai', aiRoute);
 
 
 

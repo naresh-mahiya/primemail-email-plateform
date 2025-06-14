@@ -6,8 +6,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setSentEmails, setOpen } from '../redux/appSlice';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
+import { useEffect } from 'react';
 
-const SendEmail = () => {
+const SendEmail = ({setShowAICompose, aiComposeText}) => {
   const { open, sentEmails } = useSelector(store => store.app);
   const dispatch = useDispatch();
 
@@ -18,6 +19,14 @@ const SendEmail = () => {
     message: '',
     scheduledAt: '' // New field for scheduling emails
   });
+
+  useEffect(() => {
+    if (aiComposeText) {
+      setFormData({ ...formData, message: aiComposeText });
+    }
+  }, [aiComposeText]);
+
+
 
   // Handle input change
   const changeHandler = (e) => {
@@ -59,6 +68,9 @@ const SendEmail = () => {
       {/* Header */}
       <div className='flex items-center justify-between px-3 py-2 bg-[#F2F6FC]'>
         <h1>New Message</h1>
+        <div>
+          <button onClick={()=>setShowAICompose(true)}>✨AI Compose</button>
+        </div>
         <div onClick={() => dispatch(setOpen(false))} className='p-2 rounded-full hover:bg-gray-200 hover:cursor-pointer'>
           <RxCross2 size={'20px'} />
         </div>
