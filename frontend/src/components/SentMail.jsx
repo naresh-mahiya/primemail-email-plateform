@@ -9,6 +9,7 @@ import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast'
 import api from '../api'
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { RiRobot2Line } from "react-icons/ri";
 
 const SentMail = () => {
     const navigate = useNavigate();
@@ -23,6 +24,8 @@ const SentMail = () => {
     const [forwardTo, setForwardTo] = useState('');
     const [forwardMessage, setForwardMessage] = useState('');
     const [readReceipt, setReadReceipt] = useState(false);
+    const [summary, setSummary] = useState('');
+    const [loadingSummary, setLoadingSummary] = useState(false);
 
     useEffect(() => {
         const fetchEmailThread = async () => {
@@ -45,6 +48,25 @@ const SentMail = () => {
         };
         fetchEmailThread();
     }, [selectedEmail]);
+
+        // Generate AI summary of email
+    const handleSummarize = async () => {
+        if (!selectedEmail) return;
+        try {
+            setLoadingSummary(true);
+            setSummary('');
+            const res = await api.post('api/v1/ai/summarize', {
+                subject: selectedEmail.subject,
+                message: selectedEmail.message,
+            }, { withCredentials: true });
+            setSummary(res.data.summary);
+        } catch (error) {
+            console.error('Error summarizing email:', error);
+            toast.error(error.response?.data?.message || 'Failed to generate summary');
+        } finally {
+            setLoadingSummary(false);
+        }
+    };
 
     const renderReadReceipt = () => {
         return readReceipt ? <span className="text-green-500">✔ Read</span> : <span className="text-gray-500">✖ Unread</span>;
@@ -162,9 +184,24 @@ const SentMail = () => {
                         >
                             {showOriginal ? 'Hide Original' : 'Show Original'}
                         </button>
+                        <button
+                            onClick={handleSummarize}
+                            className='flex items-center gap-1 px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700'
+                        >
+                            <RiRobot2Line size={16} /> Summarize
+                        </button>
                     </div>
                 </div>
 
+                {loadingSummary && (
+                    <p className='italic text-gray-500 mb-4'>Generating summary...</p>
+                )}
+                {summary && !loadingSummary && (
+                    <div className='bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded-md mb-4'>
+                        <h2 className='font-medium text-indigo-700 mb-1'>AI Summary</h2>
+                        <p className='whitespace-pre-wrap'>{summary}</p>
+                    </div>
+                )}
                 {/* Email Thread */}
                 <div className="email-thread space-y-4">
                     {emailThread.map((email, index) => (
