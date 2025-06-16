@@ -6,6 +6,13 @@ export const createEmail = async (req, res) => {
     try {
         const userId = req.id;//we saved it during login
         const { to, subject, message, scheduledAt } = req.body;
+        // Build attachments array from files uploaded via multer (CloudinaryStorage)
+        const attachments = Array.isArray(req.files) && req.files.length
+            ? req.files.map(file => ({
+                filename: file.originalname || file.filename,
+                fileurl: file.path, // cloudinary URL provided by multer-storage-cloudinary
+            }))
+            : [];
         
         // Convert to array if it's a single email
         const recipientEmails = Array.isArray(to) ? to : [to];
@@ -27,6 +34,7 @@ export const createEmail = async (req, res) => {
             to: recipientEmails,
             subject,
             message,
+            attachments,
             senderId: userId,
             receiverIds,
             scheduledAt: scheduledAt || null,
@@ -142,6 +150,12 @@ export const replyToEmail = async (req, res) => {
         const userId = req.id;
         const emailId = req.params.id;
         const { message } = req.body;
+        const attachments = Array.isArray(req.files) && req.files.length
+            ? req.files.map(file => ({
+                filename: file.originalname || file.filename,
+                fileurl: file.path,
+            }))
+            : [];
 
         if (!message) {
             return res.status(400).json({ message: 'Message is required' });
@@ -161,6 +175,7 @@ export const replyToEmail = async (req, res) => {
             to: originalEmail.senderId.email,
             subject: `Re: ${originalEmail.subject}`,
             message: message,
+            attachments,
             senderId: userId,
             receiverIds: originalEmail.senderId._id,
             status: 'sent',
@@ -234,6 +249,12 @@ export const forwardEmail = async (req, res) => {
         const userId = req.id;
         const emailId = req.params.id;
         const { to, message } = req.body;
+        const attachments = Array.isArray(req.files) && req.files.length
+            ? req.files.map(file => ({
+                filename: file.originalname || file.filename,
+                fileurl: file.path,
+            }))
+            : [];
 
         if (!to) {
             return res.status(400).json({ message: 'Recipient email is required' });
@@ -269,6 +290,7 @@ export const forwardEmail = async (req, res) => {
             senderId: userId,
             receiverIds,
             status: 'sent',
+            attachments,
             trackingId,
             threadId,
             isReply: false,

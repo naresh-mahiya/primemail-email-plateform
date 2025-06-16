@@ -13,32 +13,38 @@ const emailSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    attachments: [
+        {
+            filename: { type: String, required: true },
+            fileurl: { type: String, required: true }
+        }
+    ],
     senderId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref:'User',   
-        required:true
+        ref: 'User',
+        required: true
     },
     receiverIds: {
         type: [mongoose.Schema.Types.ObjectId],
         ref: 'User',
         required: true
     },
-    scheduledAt:{
-        type:Date,
-        default:null
+    scheduledAt: {
+        type: Date,
+        default: null
     },
-    status:{
-        type:String,
-        enum:['pending','sent'],
-        default:'sent'
+    status: {
+        type: String,
+        enum: ['pending', 'sent'],
+        default: 'sent'
     },
-    read:{
-        type:Boolean,
-        default:false
+    read: {
+        type: Boolean,
+        default: false
     },
-    trackingId:{
-        type:String,
-        unique:true
+    trackingId: {
+        type: String,
+        unique: true
     },
     threadId: {
         type: String,
@@ -53,8 +59,8 @@ const emailSchema = new mongoose.Schema({
         ref: 'Email',
         default: null
     }
-    
-},{timestamps:true});   
+
+}, { timestamps: true });
 
 
 export const Email = mongoose.model("Email", emailSchema)

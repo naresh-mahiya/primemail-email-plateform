@@ -17,7 +17,8 @@ const SendEmail = ({setShowAICompose, aiComposeText}) => {
     to: '',
     subject: '',
     message: '',
-    scheduledAt: '' // New field for scheduling emails
+    scheduledAt: '', // New field for scheduling emails
+    attachments: []
   });
 
   useEffect(() => {
@@ -34,6 +35,27 @@ const SendEmail = ({setShowAICompose, aiComposeText}) => {
       // Split the input by commas and trim each email
       const emails = e.target.value.split(',').map(email => email.trim());
       setFormData({ ...formData, [e.target.name]: emails });
+    } else if (e.target.name === 'attachments') {
+      let files = Array.from(e.target.files);
+      // allowed extensions
+      const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+      const allowedExt = ['.jpg','.jpeg','.png','.pdf','.docx','.mp4','.mov','.webm','.avi'];
+      const invalid = files.filter(f => !allowedExt.some(ext=>f.name.toLowerCase().endsWith(ext)));
+      if(invalid.length){
+        toast.error(`Some files have unsupported type and were ignored (${invalid.map(f=>f.name).join(', ')})`);
+        files = files.filter(f => !invalid.includes(f));
+      // size check
+      const oversize = files.filter(f=> f.size > MAX_SIZE);
+      if(oversize.length){
+        toast.error(`${oversize.length} file(s) exceed 50MB and were ignored`);
+        files = files.filter(f=> f.size <= MAX_SIZE);
+      }
+      }
+      if (files.length > 10) {
+        toast.error('You can attach up to 10 files');
+        files = files.slice(0,10);
+      }
+      setFormData({ ...formData, attachments: files });
     } else {
       setFormData({ ...formData, [e.target.name]: e.target.value });
     }
@@ -43,14 +65,26 @@ const SendEmail = ({setShowAICompose, aiComposeText}) => {
   const submitHandler = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post('api/v1/email/create', formData,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          withCredentials: true
-        }
-      );
+      //need to use this class if want to send files to the backend (becose json.stringify will convert files into json object which will be of no use)
+      //state can be used to store files and use for UI purposes...but when need to send to backend
+      //.....need this formdata class
+      const data = new FormData();
+      if(Array.isArray(formData.to)) {
+        formData.to.forEach(email=> data.append('to', email));
+      } else {
+        data.append('to', formData.to);
+      }
+      data.append('subject', formData.subject);
+      data.append('message', formData.message);
+      if(formData.scheduledAt) data.append('scheduledAt', formData.scheduledAt);
+      formData.attachments.forEach(file => data.append('attachments', file));
+
+      const res = await api.post('api/v1/email/create', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        withCredentials: true
+      });
 
       toast.success(res.data.message);
       dispatch(setSentEmails([...sentEmails, res.data.email]));
@@ -105,6 +139,18 @@ const SendEmail = ({setShowAICompose, aiComposeText}) => {
             value={formData.message}
             onChange={changeHandler}
           />
+          <div>
+            <input
+              type="file"
+              name="attachments"
+              multiple
+              accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.mov,.webm,.avi"
+              onChange={changeHandler}
+            />
+            {formData.attachments.length > 0 && (
+              <p className='text-xs text-gray-500 mt-1'>Selected {formData.attachments.length} / 10 files</p>
+            )}
+          </div>
           <div className='flex items-center gap-2'>
             <input
               type="datetime-local"
