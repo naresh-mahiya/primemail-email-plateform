@@ -22,6 +22,8 @@ const InboxMail = () => {
   const [showForward, setShowForward] = useState(false);
   const [forwardTo, setForwardTo] = useState('');
   const [forwardMessage, setForwardMessage] = useState('');
+  const [replyAttachments, setReplyAttachments] = useState([]);
+  const [forwardAttachments, setForwardAttachments] = useState([]);
   const [summary, setSummary] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(false);
 
@@ -30,7 +32,7 @@ const InboxMail = () => {
     const fetchEmailThread = async () => {
       if (selectedEmail?.threadId) {
         try {
-          const res = await api.get(`api/v1/email/thread/${selectedEmail.threadId}`, 
+          const res = await api.get(`api/v1/email/thread/${selectedEmail.threadId}`,
             { withCredentials: true }
           );
           setEmailThread(res.data.thread);
@@ -63,17 +65,19 @@ const InboxMail = () => {
   //handle submit reply
   const handleSubmitReply = async () => {
     try {
-      const res = await api.post(`api/v1/email/reply/${params.id}`, 
-        { message: replyMessage },
-        { withCredentials: true }
-      )
+      const data = new FormData();
+      data.append('message', replyMessage);
+      replyAttachments.forEach(f => data.append('attachments', f));
+      const res = await api.post(`api/v1/email/reply/${params.id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true
+      });
       toast.success('Reply sent successfully');
       setShowReply(false);
       setReplyMessage('');
-      // Refresh the thread after sending reply
-      const threadRes = await api.get(`api/v1/email/thread/${selectedEmail.threadId}`, 
-        { withCredentials: true }
-      );
+      setReplyAttachments([]);
+      // Refresh thread
+      const threadRes = await api.get(`api/v1/email/thread/${selectedEmail.threadId}`, { withCredentials: true });
       setEmailThread(threadRes.data.thread);
     } catch (error) {
       console.log("error from handleReplyEmail=>", error);
@@ -81,29 +85,31 @@ const InboxMail = () => {
     }
   }
 
+
   //handle forward email
   const handleForwardEmail = async () => {
     try {
       const forwardedContent = `${forwardMessage}\n\n---------- Forwarded message ----------\nFrom: ${selectedEmail.senderId.fullname} <${selectedEmail.senderId.email}>\nDate: ${new Date(selectedEmail.createdAt).toLocaleString()}\nSubject: ${selectedEmail.subject}\nTo: ${selectedEmail.receiverIds.map(receiver => `${receiver.fullname} <${receiver.email}>`).join(', ')}\n\n${selectedEmail.message}`;
-      
-      const res = await api.post(`api/v1/email/forward/${params.id}`, 
-        { 
-          to: forwardTo,
-          message: forwardedContent 
-        },
-        { withCredentials: true }
-      )
+      const data = new FormData();
+      forwardTo.split(',').map(e => e.trim()).forEach(email => data.append('to', email));
+      data.append('message', forwardedContent);
+      forwardAttachments.forEach(f => data.append('attachments', f));
+      const res = await api.post(`api/v1/email/forward/${params.id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true
+      });
       toast.success('Email forwarded successfully');
       setShowForward(false);
       setForwardTo('');
       setForwardMessage('');
+      setForwardAttachments([]);
     } catch (error) {
       console.log("error from handleForwardEmail=>", error);
       toast.error(error.response?.data?.message || 'Failed to forward email');
     }
   }
 
-    // Generate AI summary of email
+  // Generate AI summary of email
   const handleSummarize = async () => {
     if (!selectedEmail) return;
     try {
@@ -121,6 +127,45 @@ const InboxMail = () => {
       setLoadingSummary(false);
     }
   }
+
+  //change handler for file input in forward composer
+  const handleForwardFileChange = (e) => {
+    const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+    const allowedExt = ['.jpg', '.jpeg', '.png', '.pdf', '.docx', '.mp4', '.mov', '.webm', '.avi'];
+
+    let newFiles = Array.from(e.target.files);
+    let current = [...forwardAttachments];
+
+    // Filter invalid types
+    const invalid = newFiles.filter(f => !allowedExt.some(ext => f.name.toLowerCase().endsWith(ext)));
+    if (invalid.length) {
+      toast.error(`Unsupported file(s): ${invalid.map(f => f.name).join(', ')}`);
+      newFiles = newFiles.filter(f => !invalid.includes(f));
+    }
+
+    // Filter oversized
+    const oversize = newFiles.filter(f => f.size > MAX_SIZE);
+    if (oversize.length) {
+      toast.error(`File(s) > 50MB: ${oversize.map(f => f.name).join(', ')}`);
+      newFiles = newFiles.filter(f => f.size <= MAX_SIZE);
+    }
+
+    // Merge without duplicates
+    for (let file of newFiles) {
+      if (!current.some(existing => existing.name === file.name)) {
+        current.push(file);
+      }
+    }
+
+    // Enforce max 10
+    if (current.length > 10) {
+      toast.error('Only 10 attachments allowed. Extra files were ignored.');
+      current = current.slice(0, 10);
+    }
+
+    setForwardAttachments(current);
+  };
+
 
   const formatQuotedText = (email) => {
     const date = new Date(email.createdAt).toLocaleString();
@@ -192,11 +237,10 @@ const InboxMail = () => {
         {/* Email Thread */}
         <div className="email-thread space-y-4">
           {emailThread.map((email, index) => (
-            <div 
-              key={email._id} 
-              className={`email-message p-4 rounded-lg ${
-                index === emailThread.length - 1 ? 'bg-gray-50 border border-gray-200' : 'bg-white'
-              }`}
+            <div
+              key={email._id}
+              className={`email-message p-4 rounded-lg ${index === emailThread.length - 1 ? 'bg-gray-50 border border-gray-200' : 'bg-white'
+                }`}
             >
               <div className="email-header flex justify-between items-center mb-2">
                 <div className="text-sm text-gray-600">
@@ -231,7 +275,7 @@ const InboxMail = () => {
                   <div>
                     <div className="mb-4">{email.message}</div>
                     <div className="border-t pt-4">
-                      <div 
+                      <div
                         className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
                         onClick={() => setShowQuotedText(!showQuotedText)}
                       >
@@ -281,13 +325,56 @@ const InboxMail = () => {
                 Fwd: {selectedEmail.subject}
               </div>
             </div>
-            
+
             <textarea
               className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4'
               placeholder='Add a message (optional)'
               value={forwardMessage}
               onChange={(e) => setForwardMessage(e.target.value)}
             />
+            {/* attachments */}
+            <div className="mt-2">
+              <input
+                type="file"
+                id="forward-upload"
+                multiple
+                accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.mov,.webm,.avi"
+                className="hidden"
+                onChange={handleForwardFileChange}
+              />
+
+              <label
+                htmlFor="forward-upload"
+                className="inline-block cursor-pointer bg-blue-600 text-white text-sm px-4 py-2 rounded-md shadow hover:bg-blue-700 transition duration-200"
+              >
+                📎 Attach Files
+              </label>
+
+              {forwardAttachments.length > 0 && (
+                <>
+                  <p className="text-xs text-gray-600 mt-2">
+                    Selected <span className="font-medium">{forwardAttachments.length}</span> / 10 file(s)
+                  </p>
+                  <ul className="mt-1 text-sm text-gray-700 space-y-1">
+                    {forwardAttachments.map((file, idx) => (
+                      <li key={idx} className="bg-gray-100 rounded px-2 py-1 flex justify-between items-center">
+                        <span className="truncate max-w-[220px]">{file.name}</span>
+                        <button
+                          className="text-red-500 text-base font-bold hover:text-red-700"
+                          onClick={() =>  setForwardAttachments(prev => prev.filter((_, i) => i !== idx))}
+
+                         
+
+                        >
+                          ❌
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+
 
             {/* Original Email Preview */}
             <div className='border-t pt-4'>
@@ -335,13 +422,26 @@ const InboxMail = () => {
                 Re: {selectedEmail.subject}
               </div>
             </div>
-            
+
             <textarea
               className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
               placeholder='Add a message (optional)'
               value={replyMessage}
               onChange={(e) => setReplyMessage(e.target.value)}
             />
+            <div className='mt-2'>
+              <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.mov,.webm,.avi" onChange={(e) => {
+                let files = Array.from(e.target.files);
+                const allowedExt = ['.jpg', '.jpeg', '.png', '.pdf', '.docx', '.mp4', '.mov', '.webm', '.avi'];
+                files = files.filter(f => allowedExt.some(ext => f.name.toLowerCase().endsWith(ext)));
+                const oversize = files.filter(f => f.size > 50 * 1024 * 1024);
+                if (oversize.length) { toast.error(`${oversize.length} file(s) exceed 50MB and were ignored`); }
+                files = files.filter(f => f.size <= 50 * 1024 * 1024);
+                if (files.length > 10) { toast.error('You can attach up to 10 files'); files = files.slice(0, 10); }
+                setReplyAttachments(files);
+              }} />
+              {replyAttachments.length > 0 && (<p className='text-xs text-gray-500 mt-1'>Selected {replyAttachments.length} / 10 files</p>)}
+            </div>
 
             <div className='flex justify-end gap-2 mt-4'>
               <button
