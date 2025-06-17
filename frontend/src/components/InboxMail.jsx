@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import api from '../api'
 import { RiRobot2Line } from "react-icons/ri";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { handleAttachmentFiles } from '../utils/handleAttachmentFiles';
 
 const InboxMail = () => {
   const navigate = useNavigate();
@@ -130,41 +131,24 @@ const InboxMail = () => {
 
   //change handler for file input in forward composer
   const handleForwardFileChange = (e) => {
-    const MAX_SIZE = 50 * 1024 * 1024; // 50MB
-    const allowedExt = ['.jpg', '.jpeg', '.png', '.pdf', '.docx', '.mp4', '.mov', '.webm', '.avi'];
-
-    let newFiles = Array.from(e.target.files);
-    let current = [...forwardAttachments];
-
-    // Filter invalid types
-    const invalid = newFiles.filter(f => !allowedExt.some(ext => f.name.toLowerCase().endsWith(ext)));
-    if (invalid.length) {
-      toast.error(`Unsupported file(s): ${invalid.map(f => f.name).join(', ')}`);
-      newFiles = newFiles.filter(f => !invalid.includes(f));
-    }
-
-    // Filter oversized
-    const oversize = newFiles.filter(f => f.size > MAX_SIZE);
-    if (oversize.length) {
-      toast.error(`File(s) > 50MB: ${oversize.map(f => f.name).join(', ')}`);
-      newFiles = newFiles.filter(f => f.size <= MAX_SIZE);
-    }
-
-    // Merge without duplicates
-    for (let file of newFiles) {
-      if (!current.some(existing => existing.name === file.name)) {
-        current.push(file);
-      }
-    }
-
-    // Enforce max 10
-    if (current.length > 10) {
-      toast.error('Only 10 attachments allowed. Extra files were ignored.');
-      current = current.slice(0, 10);
-    }
-
-    setForwardAttachments(current);
+    const newFiles = Array.from(e.target.files);
+    const updated = handleAttachmentFiles({
+      newFiles,
+      existingFiles: forwardAttachments
+    });
+    setForwardAttachments(updated);
   };
+
+  //change handler for file input in forward composer
+  const handleReplyFileChange = (e) => {
+    const newFiles = Array.from(e.target.files);
+    const updated = handleAttachmentFiles({
+      newFiles,
+      existingFiles: replyAttachments
+    });
+    setReplyAttachments(updated);
+  };
+
 
 
   const formatQuotedText = (email) => {
@@ -361,9 +345,9 @@ const InboxMail = () => {
                         <span className="truncate max-w-[220px]">{file.name}</span>
                         <button
                           className="text-red-500 text-base font-bold hover:text-red-700"
-                          onClick={() =>  setForwardAttachments(prev => prev.filter((_, i) => i !== idx))}
+                          onClick={() => setForwardAttachments(prev => prev.filter((_, i) => i !== idx))}
 
-                         
+
 
                         >
                           ❌
@@ -425,22 +409,51 @@ const InboxMail = () => {
 
             <textarea
               className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-              placeholder='Add a message (optional)'
+              placeholder='Add a message'
               value={replyMessage}
               onChange={(e) => setReplyMessage(e.target.value)}
             />
-            <div className='mt-2'>
-              <input type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.mov,.webm,.avi" onChange={(e) => {
-                let files = Array.from(e.target.files);
-                const allowedExt = ['.jpg', '.jpeg', '.png', '.pdf', '.docx', '.mp4', '.mov', '.webm', '.avi'];
-                files = files.filter(f => allowedExt.some(ext => f.name.toLowerCase().endsWith(ext)));
-                const oversize = files.filter(f => f.size > 50 * 1024 * 1024);
-                if (oversize.length) { toast.error(`${oversize.length} file(s) exceed 50MB and were ignored`); }
-                files = files.filter(f => f.size <= 50 * 1024 * 1024);
-                if (files.length > 10) { toast.error('You can attach up to 10 files'); files = files.slice(0, 10); }
-                setReplyAttachments(files);
-              }} />
-              {replyAttachments.length > 0 && (<p className='text-xs text-gray-500 mt-1'>Selected {replyAttachments.length} / 10 files</p>)}
+            {/* attachments */}
+            <div className="mt-2">
+              <input
+                type="file"
+                id="reply-upload"
+                multiple
+                accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.mov,.webm,.avi"
+                className="hidden"
+                onChange={handleReplyFileChange}
+              />
+
+              <label
+                htmlFor="reply-upload"
+                className="inline-block cursor-pointer bg-blue-600 text-white text-sm px-4 py-2 rounded-md shadow hover:bg-blue-700 transition duration-200"
+              >
+                📎 Attach Files
+              </label>
+
+              {replyAttachments.length > 0 && (
+                <>
+                  <p className="text-xs text-gray-600 mt-2">
+                    Selected <span className="font-medium">{replyAttachments.length}</span> / 10 file(s)
+                  </p>
+                  <ul className="mt-1 text-sm text-gray-700 space-y-1">
+                    {replyAttachments.map((file, idx) => (
+                      <li key={idx} className="bg-gray-100 rounded px-2 py-1 flex justify-between items-center">
+                        <span className="truncate max-w-[220px]">{file.name}</span>
+                        <button
+                          className="text-red-500 text-base font-bold hover:text-red-700"
+                          onClick={() => setReplyAttachments(prev => prev.filter((_, i) => i !== idx))}
+
+
+
+                        >
+                          ❌
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
 
             <div className='flex justify-end gap-2 mt-4'>
