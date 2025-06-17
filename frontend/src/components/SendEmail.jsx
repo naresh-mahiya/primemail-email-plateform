@@ -167,7 +167,7 @@ const SendEmail = ({ setShowAICompose, aiComposeText }) => {
                       {/* Remove button */}
                       <button
                         type="button"
-                        onClick={() => removeFile(index)}
+                        onClick={() => setFormData(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== index) }))}
                         className="text-red-500 hover:text-red-700 font-bold text-base"
                       >
                         ❌

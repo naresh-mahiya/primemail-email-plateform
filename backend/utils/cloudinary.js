@@ -25,4 +25,4 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 }
 });
 
-module.exports = upload;
+export default upload;
