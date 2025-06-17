@@ -1,5 +1,5 @@
 import express from 'express'
-import {upload} from '../utils/cloudinary.js'
+import upload from '../utils/cloudinary.js'
 import { trackEmailRead, createEmail, replyToEmail, deleteEmail, getAllEmailsInbox, getAllEmailsSent, getEmailThread, forwardEmail, starEmail, unstarEmail, getStarredEmails, getEmailById, deleteManyEmails } from '../controllers/emailCtrl.js';
 import isAuthenticated from '../middleware/isAuthenticated.js'
 
