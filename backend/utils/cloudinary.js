@@ -1,5 +1,8 @@
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+import cloudinaryModule from 'cloudinary';
+const cloudinary = cloudinaryModule.v2;
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import multer from 'multer';
+
 
 // Cloudinary config
 cloudinary.config({
@@ -18,7 +21,7 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const multer = require('multer');
+
 const MAX_FILE_SIZE_MB = 50; // maximum 50 MB per file
 const upload = multer({
   storage,
