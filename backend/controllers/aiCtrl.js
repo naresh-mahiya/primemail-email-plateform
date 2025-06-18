@@ -12,11 +12,7 @@ if (!GEMINI_API_KEY) {
   console.warn('GEMINI_API_KEY is not set in environment variables. AI features will not work.');
 }
 
-/**
- * POST /api/v1/ai/compose
- * Body: { prompt: string }
- * Returns: { text: string }
- */
+
 export const composeEmailAI = async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -38,11 +34,7 @@ export const composeEmailAI = async (req, res) => {
   }
 };
 
-/**
- * POST /api/v1/ai/summarize
- * Body: { subject: string, message: string }
- * Returns: { summary: string }
- */
+
 export const summarizeEmailAI = async (req, res) => {
   try {
     const { subject, message } = req.body;
@@ -65,5 +57,31 @@ export const summarizeEmailAI = async (req, res) => {
   } catch (error) {
     console.error('Error in summarizeEmailAI:', error?.response?.data || error.message);
     return res.status(500).json({ message: 'Failed to summarize email' });
+  }
+};
+
+
+export const smartReplyAI = async (req, res) => {
+  try {
+    const { originalMessage } = req.body;
+    if (!originalMessage) {
+      return res.status(400).json({ message: 'Original message is required' });
+    }
+
+    const prompt = `Write a polite and appropriate reply to the following email:\n\n${originalMessage}`;
+
+    const response = await axios.post(GEMINI_ENDPOINT, {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.6,
+        maxOutputTokens: 512,
+      },
+    });
+
+    const reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return res.status(200).json({ reply });
+  } catch (error) {
+    console.error('Error in smartReplyAI:', error?.response?.data || error.message);
+    return res.status(500).json({ message: 'Failed to generate smart reply' });
   }
 };

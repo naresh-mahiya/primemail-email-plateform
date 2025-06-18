@@ -13,6 +13,7 @@ import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { FiPaperclip } from "react-icons/fi";
 import { handleAttachmentFiles } from '../utils/handleAttachmentFiles';
 import AttachmentButton from './AttachmentButton'
+import AIReplyAssistant from './AIReplyAssistant'
 
 const InboxMail = () => {
   const navigate = useNavigate();
@@ -149,6 +150,11 @@ const InboxMail = () => {
       existingFiles: replyAttachments
     });
     setReplyAttachments(updated);
+  };
+
+  const handleInsertAIReply = (reply) => {
+    setReplyMessage((prev) => prev + '\n\n' + reply);
+    
   };
 
 
@@ -402,6 +408,7 @@ const InboxMail = () => {
                 <span className='font-medium'>Subject: </span>
                 Re: {selectedEmail.subject}
               </div>
+              <AIReplyAssistant originalMessage={selectedEmail.message} onInsert={handleInsertAIReply} />
             </div>
 
             <textarea
