@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 import api from '../api';
 import { useEffect } from 'react';
 import { handleAttachmentFiles } from '../utils/handleAttachmentFiles';
+import AttachmentButton from './AttachmentButton'
 
 const SendEmail = ({ setShowAICompose, aiComposeText }) => {
   const { open, sentEmails } = useSelector(store => store.app);

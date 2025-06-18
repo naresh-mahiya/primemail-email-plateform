@@ -10,6 +10,9 @@ import toast from 'react-hot-toast'
 import api from '../api'
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { RiRobot2Line } from "react-icons/ri";
+import { FiPaperclip } from "react-icons/fi";
+import { handleAttachmentFiles } from '../utils/handleAttachmentFiles';
+import  AttachmentButton  from './AttachmentButton'
 
 const SentMail = () => {
     const navigate = useNavigate();
@@ -23,6 +26,8 @@ const SentMail = () => {
     const [showForward, setShowForward] = useState(false);
     const [forwardTo, setForwardTo] = useState('');
     const [forwardMessage, setForwardMessage] = useState('');
+    const [forwardAttachments, setForwardAttachments] = useState([]);
+    const [replyAttachments, setReplyAttachments] = useState([]);
     const [readReceipt, setReadReceipt] = useState(false);
     const [summary, setSummary] = useState('');
     const [loadingSummary, setLoadingSummary] = useState(false);
@@ -49,7 +54,7 @@ const SentMail = () => {
         fetchEmailThread();
     }, [selectedEmail]);
 
-        // Generate AI summary of email
+    // Generate AI summary of email
     const handleSummarize = async () => {
         if (!selectedEmail) return;
         try {
@@ -84,16 +89,42 @@ const SentMail = () => {
         }
     }
 
+    // Handle file selection for reply
+    const handleReplyFileChange = (e) => {
+        const newFiles = Array.from(e.target.files);
+        const updated = handleAttachmentFiles({
+            newFiles,
+            existingFiles: replyAttachments
+        });
+        setReplyAttachments(updated);
+    };
+
     //handle submit reply
     const handleSubmitReply = async () => {
         try {
+            const formData = new FormData();
+            formData.append('message', replyMessage);
+
+            // Append all attachments
+            replyAttachments.forEach(file => {
+                formData.append('attachments', file);
+            });
+
             const res = await api.post(`api/v1/email/reply/${params.id}`,
-                { message: replyMessage },
-                { withCredentials: true }
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    },
+                    withCredentials: true
+                }
             )
+
             toast.success('Reply sent successfully');
             setShowReply(false);
             setReplyMessage('');
+            setReplyAttachments([]);
+
             // Refresh the thread after sending reply
             const threadRes = await api.get(`api/v1/email/thread/${selectedEmail.threadId}`,
                 { withCredentials: true }
@@ -105,22 +136,49 @@ const SentMail = () => {
         }
     }
 
+    // Handle file selection for forward
+    const handleForwardFileChange = (e) => {
+        const newFiles = Array.from(e.target.files);
+        const updated = handleAttachmentFiles({
+            newFiles,
+            existingFiles: forwardAttachments
+        });
+        setForwardAttachments(updated);
+    };
+
     //handle forward email
     const handleForwardEmail = async () => {
         try {
             const forwardedContent = `${forwardMessage}\n\n---------- Forwarded message ----------\nFrom: ${selectedEmail.senderId.fullname} <${selectedEmail.senderId.email}>\nDate: ${new Date(selectedEmail.createdAt).toLocaleString()}\nSubject: ${selectedEmail.subject}\nTo: ${selectedEmail.receiverIds.map(receiver => `${receiver.fullname} <${receiver.email}>`).join(', ')}\n\n${selectedEmail.message}`;
 
+            const formData = new FormData();
+            formData.append('message', forwardedContent);
+
+            // Add each recipient
+            forwardTo.split(',').forEach(email => {
+                formData.append('to', email.trim());
+            });
+
+            // Append all attachments
+            forwardAttachments.forEach(file => {
+                formData.append('attachments', file);
+            });
+
             const res = await api.post(`api/v1/email/forward/${params.id}`,
+                formData,
                 {
-                    to: forwardTo,
-                    message: forwardedContent
-                },
-                { withCredentials: true }
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    },
+                    withCredentials: true
+                }
             )
+
             toast.success('Email forwarded successfully');
             setShowForward(false);
             setForwardTo('');
             setForwardMessage('');
+            setForwardAttachments([]);
         } catch (error) {
             console.log("error from handleForwardEmail=>", error);
             toast.error(error.response?.data?.message || 'Failed to forward email');
@@ -245,7 +303,23 @@ const SentMail = () => {
                             <div className="email-content whitespace-pre-wrap">
                                 {email.isReply ? (
                                     <div>
-                                        <div className="mb-4">{email.message}</div>
+                                        <div className="mb-4 whitespace-pre-wrap">{email.message}</div>
+                                        {email.attachments && email.attachments.length > 0 && (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {email.attachments.map((attachment, index) => (
+                                                    <a
+                                                        key={index}
+                                                        href={attachment.fileurl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-1 px-3 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
+                                                    >
+                                                        <FiPaperclip className="text-gray-600" />
+                                                        <span className="text-sm truncate max-w-[150px]">{attachment.filename}</span>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
                                         <div className="border-t pt-4">
                                             <div
                                                 className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
@@ -268,7 +342,25 @@ const SentMail = () => {
                                         </div>
                                     </div>
                                 ) : (
-                                    email.message
+                                    <>
+                                        {email.message}
+                                        {email.attachments && email.attachments.length > 0 && (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {email.attachments.map((attachment, index) => (
+                                                    <a
+                                                        key={index}
+                                                        href={attachment.fileurl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-1 px-3 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
+                                                    >
+                                                        <FiPaperclip className="text-gray-600" />
+                                                        <span className="text-sm truncate max-w-[150px]">{attachment.filename}</span>
+                                                    </a>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                             {index < emailThread.length - 1 && (
@@ -299,11 +391,15 @@ const SentMail = () => {
                         </div>
 
                         <textarea
-                            className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4'
+                            className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2'
                             placeholder='Add a message (optional)'
                             value={forwardMessage}
                             onChange={(e) => setForwardMessage(e.target.value)}
                         />
+
+                        {/* Forward Attachments */}
+                        <AttachmentButton handleFileChange={handleForwardFileChange} attachments={forwardAttachments} setAttachments={setForwardAttachments}/>
+
 
                         {/* Original Email Preview */}
                         <div className='border-t pt-4'>
@@ -324,6 +420,7 @@ const SentMail = () => {
                                     setShowForward(false);
                                     setForwardTo('');
                                     setForwardMessage('');
+                                    setForwardAttachments([]);
                                 }}
                             >
                                 Cancel
@@ -353,11 +450,15 @@ const SentMail = () => {
                         </div>
 
                         <textarea
-                            className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            className='w-full h-32 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2'
                             placeholder='Write your reply...'
                             value={replyMessage}
                             onChange={(e) => setReplyMessage(e.target.value)}
                         />
+
+                        {/* Reply Attachments */}
+                        <AttachmentButton handleFileChange={handleReplyFileChange} attachments={replyAttachments} setAttachments={setReplyAttachments}/>
+
 
                         {/* Quoted Text Section */}
                         <div className='mt-4 border-t pt-4'>
@@ -381,6 +482,7 @@ const SentMail = () => {
                                 onClick={() => {
                                     setShowReply(false);
                                     setReplyMessage('');
+                                    setReplyAttachments([]);
                                 }}
                             >
                                 Cancel

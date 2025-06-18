@@ -10,7 +10,9 @@ import toast from 'react-hot-toast'
 import api from '../api'
 import { RiRobot2Line } from "react-icons/ri";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { FiPaperclip } from "react-icons/fi";
 import { handleAttachmentFiles } from '../utils/handleAttachmentFiles';
+import AttachmentButton from './AttachmentButton'
 
 const InboxMail = () => {
   const navigate = useNavigate();
@@ -257,7 +259,23 @@ const InboxMail = () => {
               <div className="email-content whitespace-pre-wrap">
                 {email.isReply ? (
                   <div>
-                    <div className="mb-4">{email.message}</div>
+                    <div className="mb-4 whitespace-pre-wrap">{email.message}</div>
+                    {email.attachments && email.attachments.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {email.attachments.map((attachment, index) => (
+                          <a
+                            key={index}
+                            href={attachment.fileurl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-3 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
+                          >
+                            <FiPaperclip className="text-gray-600" />
+                            <span className="text-sm truncate max-w-[150px]">{attachment.filename}</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
                     <div className="border-t pt-4">
                       <div
                         className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
@@ -280,7 +298,26 @@ const InboxMail = () => {
                     </div>
                   </div>
                 ) : (
-                  email.message
+                  <>
+                  {email.message}
+                  {email.attachments && email.attachments.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {email.attachments.map((attachment, index) => (
+                        <a
+                          key={index}
+                          href={attachment.fileurl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-3 py-1 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
+                        >
+                          <FiPaperclip className="text-gray-600" />
+                          <span className="text-sm truncate max-w-[150px]">{attachment.filename}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  </>
+                  
                 )}
               </div>
               {index < emailThread.length - 1 && (
@@ -317,47 +354,7 @@ const InboxMail = () => {
               onChange={(e) => setForwardMessage(e.target.value)}
             />
             {/* attachments */}
-            <div className="mt-2">
-              <input
-                type="file"
-                id="forward-upload"
-                multiple
-                accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.mov,.webm,.avi"
-                className="hidden"
-                onChange={handleForwardFileChange}
-              />
-
-              <label
-                htmlFor="forward-upload"
-                className="inline-block cursor-pointer bg-blue-600 text-white text-sm px-4 py-2 rounded-md shadow hover:bg-blue-700 transition duration-200"
-              >
-                📎 Attach Files
-              </label>
-
-              {forwardAttachments.length > 0 && (
-                <>
-                  <p className="text-xs text-gray-600 mt-2">
-                    Selected <span className="font-medium">{forwardAttachments.length}</span> / 10 file(s)
-                  </p>
-                  <ul className="mt-1 text-sm text-gray-700 space-y-1">
-                    {forwardAttachments.map((file, idx) => (
-                      <li key={idx} className="bg-gray-100 rounded px-2 py-1 flex justify-between items-center">
-                        <span className="truncate max-w-[220px]">{file.name}</span>
-                        <button
-                          className="text-red-500 text-base font-bold hover:text-red-700"
-                          onClick={() => setForwardAttachments(prev => prev.filter((_, i) => i !== idx))}
-
-
-
-                        >
-                          ❌
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
+            <AttachmentButton handleFileChange={handleForwardFileChange} attachments={forwardAttachments} setAttachments={setForwardAttachments}/>
 
 
             {/* Original Email Preview */}
@@ -414,47 +411,7 @@ const InboxMail = () => {
               onChange={(e) => setReplyMessage(e.target.value)}
             />
             {/* attachments */}
-            <div className="mt-2">
-              <input
-                type="file"
-                id="reply-upload"
-                multiple
-                accept=".jpg,.jpeg,.png,.pdf,.docx,.mp4,.mov,.webm,.avi"
-                className="hidden"
-                onChange={handleReplyFileChange}
-              />
-
-              <label
-                htmlFor="reply-upload"
-                className="inline-block cursor-pointer bg-blue-600 text-white text-sm px-4 py-2 rounded-md shadow hover:bg-blue-700 transition duration-200"
-              >
-                📎 Attach Files
-              </label>
-
-              {replyAttachments.length > 0 && (
-                <>
-                  <p className="text-xs text-gray-600 mt-2">
-                    Selected <span className="font-medium">{replyAttachments.length}</span> / 10 file(s)
-                  </p>
-                  <ul className="mt-1 text-sm text-gray-700 space-y-1">
-                    {replyAttachments.map((file, idx) => (
-                      <li key={idx} className="bg-gray-100 rounded px-2 py-1 flex justify-between items-center">
-                        <span className="truncate max-w-[220px]">{file.name}</span>
-                        <button
-                          className="text-red-500 text-base font-bold hover:text-red-700"
-                          onClick={() => setReplyAttachments(prev => prev.filter((_, i) => i !== idx))}
-
-
-
-                        >
-                          ❌
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
+            <AttachmentButton handleFileChange={handleReplyFileChange} attachments={replyAttachments} setAttachments={setReplyAttachments}/>
 
             <div className='flex justify-end gap-2 mt-4'>
               <button

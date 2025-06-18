@@ -9,7 +9,7 @@ try {
     const pendingEmails= await Email.find({status:'pending',scheduledAt:{$lt:now}});
     for(let email of pendingEmails)
     {
-        await User.findByIdAndUpdate(email.receiverId, { $push: { inbox: email._id } });
+        await User.findByIdAndUpdate(email.receiverIds, { $push: { inbox: email._id } });
         email.status='sent';
         await email.save();
     }
