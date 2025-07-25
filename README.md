@@ -2,66 +2,75 @@
 
 ![PrimeMail Logo](https://via.placeholder.com/150x50?text=PrimeMail)
 
-PrimeMail is a modern, feature-rich email platform built with the MERN stack and AI capabilities. It provides a Gmail-like interface with advanced email management capabilities and intelligent features to enhance productivity.
+PrimeMail is a modern, feature-rich email platform built with the MERN stack and AI capabilities. It provides a Gmail-like interface with advanced AI Powered email management capabilities and intelligent features to enhance productivity.
 
-## Features
+## ✨ Features
 
-- **User Authentication**: registration and login system with welcome email on signup
-- **Email Composition**: Create and send emails to multiple recipients
-- **Email Organization**: Inbox, Sent, and Starred views
-- **Email Threading**: View complete email conversations in threads
-- **Email Actions**: Reply, forward, star/unstar, and delete emails
-- **Email Scheduling**: Schedule emails to be sent at a later time
-- **Email Tracking**: Track when emails are read by recipients with blue read ticks
-- **Responsive UI**: Modern interface built with React and Tailwind CSS
+- **User Authentication**
+  - Secure registration and login system
+  - JWT-based authentication
+  - Protected routes
 
+- **Email Management**
+  - Compose and send emails to multiple recipients
+  - Rich text email composition
+  - File attachments support
+  - Inbox, Sent, and Starred folders
+  - Email threading and conversations
+  - Reply and forward functionality
 
-## Screenshots
+- **User Experience**
+  - Modern, responsive UI built with Tailwind CSS
+  - Real-time email updates
+  - Loading states and error handling
+  - Toast notifications
 
-### Mail View
+- **AI-Powered Features**
+  - AI Email Composition Assistant
+  - Smart reply suggestions
+  - Email summarization
+
+## 🖥️ Screenshots
+
+### Mail View & AI-summery 
 ![Mail View](./screenshots/mail-view.png)
 
 ### Sent Box
 ![Sent Box](./screenshots/sentbox.png)
 
+### AI composer
+![Sent Box](./screenshots/AI-composer.png)
+
 ### Reply Mail
 ![Reply Mail](./screenshots/reply-mail.png)
 
-
-
-## <span style="color:blue; font-weight:bold;">Actively working hard on the following features:</span>
-
-- **Attachment Support**: Send and receive files of various formats
-- **Advanced Search**: Find any email instantly with powerful search capabilities
-- **AI-Powered Features**:
-  - Email summarization to quickly grasp long conversations
-  - Smart email composition assistance
-  - Automatic email categorization (Urgent, Work, Personal, etc.)
-- **Cross-Platform Integration**: Seamless communication with other email services
-- **Two-Factor Authentication (2FA)**: Enhanced security for your email account
-- **Email Drafts**: Save emails to finish composing later
-- **Smart Categories & Labels**: Organize your emails with custom categories
-
-## Tech Stack
+## 🚀 Tech Stack
 
 ### Frontend
-- React 18
+- React 18 with Vite
 - Redux Toolkit for state management
-- React Router for navigation
+- React Router v7 for navigation
 - Tailwind CSS for styling
 - Framer Motion for animations
+- React Icons and Lucide Icons
 - Axios for API requests
 - React Hot Toast for notifications
 - React Avatar for user avatars
 
 ### Backend
-- Node.js with Express
+- Node.js with Express.js
 - MongoDB with Mongoose ODM
 - JWT for authentication
-- bcryptjs for password hashing
-- node-cron for scheduling emails
+- Cloudinary for file storage
+- Nodemailer for email sending
+- Bcrypt for password hashing
+- Node-Cron for scheduling emails
 
-## Project Structure
+### AI Integration
+- OpenAI API for AI-powered features
+- Natural language processing for email assistance
+-
+## 🏗️ Project Structure
 
 ```
 primemail/
@@ -72,6 +81,7 @@ primemail/
 │   ├── models/             # Mongoose models
 │   ├── routes/             # API routes
 │   ├── scripts/            # Utility scripts
+│   ├── utils/              # Helper functions
 │   └── index.js            # Server entry point
 │
 ├── frontend/               # React frontend
@@ -81,62 +91,110 @@ primemail/
 │       ├── components/     # React components
 │       ├── hooks/          # Custom React hooks
 │       ├── redux/          # Redux store and slices
+│       ├── api.js          # API configuration
 │       ├── App.jsx         # Main application component
 │       └── main.jsx        # Application entry point
 ```
 
-## Getting Started
+## 🚀 Getting Started
 
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm (v8 or higher)
+- MongoDB Atlas account or local MongoDB instance
+- Cloudinary account (for file uploads)
+- OpenAI API key (for AI features)
 
 ### Installation
 
 1. Clone the repository
-   ```
+   ```bash
    git clone https://github.com/naresh-mahiya/primemail-email-plateform.git
    cd primemail
    ```
 
-2. Install backend dependencies
-   ```
+2. Set up the backend
+   ```bash
    cd backend
    npm install
+   cp .env.example .env
+   # Update the .env file with your configuration
    ```
 
-3. Set up environment variables
-   Create a `.env` file in the backend directory with the following variables:
-   ```
-   MONGO_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret
-   ```
-
-4. Install frontend dependencies
-   ```
+3. Set up the frontend
+   ```bash
    cd ../frontend
    npm install
+   cp .env.example .env
+   # Update the .env file with your API endpoints
    ```
+
+### Configuration
+
+#### Backend (.env)
+```
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRE=30d
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+OPENAI_API_KEY=your_openai_api_key
+```
+
+#### Frontend (.env)
+```
+VITE_API_BASE_URL=http://localhost:5000/api
+```
 
 ### Running the Application
 
 1. Start the backend server
-   ```
+   ```bash
    cd backend
    npm run dev
    ```
 
 2. Start the frontend development server
-   ```
+   ```bash
    cd frontend
    npm run dev
    ```
 
 3. Open your browser and navigate to `http://localhost:5173`
 
+## 📦 Deployment
 
+The application is configured for deployment on Vercel (frontend) and Render/Railway (backend).
 
-## Author
+### Frontend Deployment
 
-- **Naresh Mahiya** - [GitHub Profile](https://github.com/naresh-mahiya)
+1. Push your code to a GitHub repository
+2. Import the repository to Vercel
+3. Set up environment variables in the Vercel dashboard
+4. Deploy!
 
-## License
+### Backend Deployment
 
-This project is licensed under the ISC License
+1. Push your code to a GitHub repository
+2. Create a new web service on Render/Railway
+3. Set up environment variables
+4. Deploy!
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+
